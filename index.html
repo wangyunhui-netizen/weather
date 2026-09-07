@@ -61,6 +61,14 @@ button{font:inherit}
 .mcell.wk{color:var(--mut)}
 .detail{margin-top:8px;background:var(--bg);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--tx);display:none}
 .detail.show{display:block}
+.snowbar{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin-top:8px}
+.snowbar .lbl{font-size:12px;font-weight:700;color:#3f8ef0;display:flex;align-items:center;margin-right:2px;white-space:nowrap}
+.snowchip{border:1px solid rgba(63,142,240,.55);background:rgba(63,142,240,.13);border-radius:9px;padding:4px 8px;text-align:center;line-height:1.35}
+.snowchip .d1{font-size:11.5px;font-weight:600}
+.snowchip .d2{font-size:10.5px;color:var(--mut)}
+.snownone{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);
+  background:rgba(26,156,90,.09);border:1px dashed rgba(26,156,90,.45);border-radius:9px;padding:4px 10px}
+.snowtip{font-size:10.5px;color:var(--mut);margin-top:4px}
 .risk{margin:6px 0;border-radius:10px;padding:7px 9px;font-size:12.5px;line-height:1.5;border-left:4px solid var(--line)}
 .risk.high{background:rgba(214,60,60,.12);border-color:#d63c3c}
 .risk.mid{background:rgba(232,144,12,.14);border-color:#e8900c}
@@ -341,6 +349,27 @@ function cardHtml(p){
   });
   const passTag=(p.sub||'').indexOf('途中')===0?'<span class="tag m">🛣 途中</span>':'';
   const sunSpan=(today.sunrise&&today.sunset)?`<span>🌅${today.sunrise.slice(11,16)}</span><span>🌇${today.sunset.slice(11,16)}</span>`:'';
+  // 10 天降雪小结
+  const WD=['日','一','二','三','四','五','六'];
+  const sdays=p.days.filter(d=>(d.snow||0)>0);
+  let snowBlock;
+  if(!sdays.length){
+    snowBlock=`<div class="snownone">✅ 本 ${p.days.length} 天无降雪预报</div>`;
+  }else{
+    const total=sdays.reduce((a,d)=>a+(d.snow||0),0);
+    const show=sdays.slice(0,6);
+    const chips=show.map(d=>{
+      const dow=WD[new Date(d.date+'T00:00:00').getDay()];
+      const w=wmo(d.code);
+      return `<span class="snowchip" title="${d.date} ${w.tx}">
+        <span class="d1">${d.date.slice(8)}日(${dow}) ❄${Number(d.snow).toFixed(1)}cm</span>
+        <span class="d2">${w.tx}·低${Math.round(d.tmin)}°·降水${d.pop??'-'}%</span></span>`;
+    }).join('');
+    const more=(sdays.length>6)?`<span class="snowchip"><span class="d1">…共${sdays.length}天降雪</span><span class="d2">合计❄${total.toFixed(1)}cm</span></span>`:'';
+    const risk=(total>=5)?' <span class="tag h">⚠ 雪量偏大，注意山区管制/备防滑链</span>':'';
+    snowBlock=`<div class="snowbar"><span class="lbl">❄ 降雪预报</span>${chips}${more}${risk}</div>
+      <div class="snowtip">数值为该日累计降雪量(cm)；降水概率为当日雨雪合计概率（预报不含“纯降雪概率”），供参考。</div>`;
+  }
   return `<div class="card" id="card-${p.id}">
     <div class="c-head">
       <div class="c-info">
@@ -360,6 +389,7 @@ function cardHtml(p){
       </div>
     </div>
     <div class="mini">${cells}</div>
+    ${snowBlock}
     <div class="detail" id="det-${p.id}"></div>
   </div>`;
 }
