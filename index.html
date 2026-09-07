@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3d66">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<meta name="mobile-web-app-capable" content="yes">
+<title>新疆自驾 · 国庆路况气象台</title>
+<style>
+:root{
+  --bg:#eef3f8; --card:#ffffff; --line:#dde5ee; --tx:#17222f; --mut:#5f7080;
+  --ok:#1a9c5a; --mid:#e8900c; --high:#d63c3c; --info:#2f6fd0;
+  --snow:#3f8ef0; --accent:#0b6bbf; --gold:#d9a514;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1520; --card:#16202e; --line:#26364a; --tx:#e8eef6; --mut:#8fa3b8; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"HarmonyOS Sans","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:12px 12px 40px}
+header{background:linear-gradient(135deg,#0b3d66,#0b6bbf 60%,#0f9bb8);color:#fff;border-radius:16px;padding:16px 16px 12px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+header h1{margin:0;font-size:20px;letter-spacing:.5px}
+header .sub{opacity:.92;font-size:12px;margin-top:4px}
+.hbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:999px;font-size:12px}
+.chip.gold{background:rgba(217,165,20,.28);border-color:#e6c25a}
+button{font:inherit}
+.btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px;background:#fff;color:#0b3d66;font-weight:600}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-top:12px;padding:12px 12px}
+.sec h2{font-size:15px;margin:0 0 8px;display:flex;align-items:center;justify-content:space-between}
+.sec h2 small{font-size:11px;color:var(--mut);font-weight:400}
+#cards{display:flex;flex-direction:column;gap:10px}
+.card{width:100%;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--bg)}
+.card h3{margin:0;font-size:14px;display:inline}
+.card h3 .sub{font-size:10.5px;color:var(--mut);font-weight:400;margin-left:2px}
+.c-head{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.c-info{flex:1;min-width:200px}
+.mm-line{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;margin-top:4px;color:var(--mut)}
+.mm-line b{color:#d63c3c}.mm-line i{color:#2f6fd0;font-style:normal}
+.c-now{white-space:nowrap;text-align:right;display:flex;align-items:center;gap:6px}
+.c-now .ic{font-size:26px;line-height:1}
+.c-now .t{font-size:24px;font-weight:700}
+.c-now .lbl{font-size:10px;color:var(--mut);display:block;text-align:center}
+.now{display:flex;align-items:center;gap:8px}
+.now .ic{font-size:30px;line-height:1}
+.now .t{font-size:24px;font-weight:700}
+.now .t small{font-size:12px;color:var(--mut);font-weight:400}
+.mm{display:flex;gap:6px;margin-top:6px;font-size:12px;flex-wrap:wrap}
+.mm b{color:#d63c3c}.mm i{color:#2f6fd0;font-style:normal}
+.mini{margin-top:8px;display:flex;gap:2px;overflow-x:auto;padding-bottom:2px}
+.mcell{flex:0 0 auto;min-width:42px;text-align:center;border-radius:6px;padding:3px 1px;font-size:10px;background:transparent;border:1px solid transparent;cursor:pointer}
+.mcell .dow{display:block}
+.mcell .ic{display:block;font-size:15px}
+.mcell .tm{display:block;font-size:9.5px}
+.mcell.snow{background:rgba(63,142,240,.18)}
+.mcell.hl{border-color:var(--gold)}
+.mcell.wk{color:var(--mut)}
+.detail{margin-top:8px;background:var(--bg);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--tx);display:none}
+.detail.show{display:block}
+.risk{margin:6px 0;border-radius:10px;padding:7px 9px;font-size:12.5px;line-height:1.5;border-left:4px solid var(--line)}
+.risk.high{background:rgba(214,60,60,.12);border-color:#d63c3c}
+.risk.mid{background:rgba(232,144,12,.14);border-color:#e8900c}
+.risk.info{background:rgba(47,111,208,.10);border-color:#2f6fd0}
+.risk.ok{background:rgba(26,156,90,.10);border-color:#1a9c5a}
+.risk b{display:block;font-size:13px}
+.news{max-height:340px;overflow:auto;margin-top:4px}
+.item{display:flex;gap:8px;padding:7px 2px;border-bottom:1px dashed var(--line);font-size:12.5px}
+.item a{color:var(--tx);text-decoration:none;flex:1}
+.item a:active{opacity:.7}
+.item .d{color:var(--mut);font-size:10.5px;white-space:nowrap;padding-top:2px}
+.roads li{margin:5px 0;font-size:13px;line-height:1.5}
+.tag{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;margin-right:4px}
+.tag.h{background:#d63c3c;color:#fff}
+.tag.m{background:#e8900c;color:#fff}
+.tag.ok{background:#1a9c5a;color:#fff}
+.official{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.official a,.official button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 9px;font-size:12px;color:var(--info);text-decoration:none;cursor:pointer}
+.svgshell{overflow-x:auto}
+svg text{font-size:10px;fill:var(--mut)}
+.tip{font-size:11.5px;color:var(--mut);line-height:1.7;margin-top:6px}
+footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-align:center}
+.statusrow{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--mut);flex-wrap:wrap;margin-top:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:#8a97a5;display:inline-block}
+.dot.g{background:#37d67a}
+.dot.r{background:#d63c3c}
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.55);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal.show{display:flex}
+.sheet{background:var(--card);border-radius:16px;max-width:420px;width:100%;padding:18px;text-align:center}
+.sheet h3{margin:0 0 10px}
+.urlbox{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:13px;word-break:break-all;margin:10px 0}
+.emptynote{color:var(--mut);font-size:12px;text-align:center;padding:12px 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+.note{font-size:11px;color:var(--mut);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚗 新疆自驾 · 国庆路况气象台</h1>
+    <div class="sub">赛里木湖 → 布尔津 → 阿勒泰/禾木 → 喀纳斯 · 途经 阿禾公路 / S21 阿乌高速</div>
+    <div class="hbar">
+      <span class="chip">📅 10.01 – 10.07 国庆</span>
+      <span class="chip gold">❄️ 关注：降温 / 降雪 / 封路公告</span>
+      <button class="btn ghost" id="btnScan" title="手机扫码打开，无需输网址">📲 手机打开</button>
+      <button class="btn ghost" id="btnShare">分享</button>
+      <button class="btn" id="btnRefresh">刷新</button>
+    </div>
+    <div class="statusrow" id="statusRow"><span>正在加载数据…</span></div>
+    <div id="pubLine" style="display:none;margin-top:6px;font-size:11px;background:rgba(255,255,255,.14);border-radius:8px;padding:5px 9px;word-break:break-all"></div>
+  </header>
+
+  <section class="sec" id="roadSec" style="display:none">
+    <h2>🛣 途经道路速览 <small>出发前仍需以官方公告为准</small></h2>
+    <ul class="roads" id="roadList"></ul>
+  </section>
+
+  <section class="sec" id="riskSec">
+    <h2 id="riskTitle">🧭 出行风险速报 <small>近 3 天 · 仅展示有风险城市</small></h2>
+    <div id="riskBox"></div>
+  </section>
+
+  <section class="sec">
+    <h2>🌤 途经点 · 预报（今天 + 未来 9 天，共 10 天）</h2>
+    <div id="cards"></div>
+  </section>
+
+  <section class="sec">
+    <h2>📈 温度与降雪趋势
+      <small><select id="chartSel" style="background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:3px 6px;font-size:12px"></select></small>
+    </h2>
+    <div class="svgshell" id="chartBox"></div>
+    <div class="note">金色底为 10.01–10.07 国庆窗口；柱状为每日降雪量(cm)。</div>
+  </section>
+
+  <section class="sec" id="noticeSec">
+    <h2>🏛 官方公告（仅政府/景区官网） <small id="newsQ" style="display:none"></small></h2>
+    <div class="hbar" id="newsBar" style="display:none;margin-top:0;gap:6px">
+      <button class="btn" style="background:var(--bg);color:var(--tx);border:1px solid var(--line)" id="newsRefresh">↻ 手动刷新公告</button>
+      <span id="newsTime" style="font-size:11px;color:var(--mut)"></span>
+    </div>
+    <div class="news" id="newsBox" style="display:none"></div>
+    <div class="official" id="officialRow"></div>
+    <div class="note" id="noticeNote">未检索到新的官方公告时，此列表自动隐藏；出发前请点上方官方入口确认。</div>
+  </section>
+
+  <section class="sec">
+    <h2>💡 出行提示</h2>
+    <div class="tip" id="tips"></div>
+  </section>
+
+  <footer>
+    数据源：Open-Meteo 天气 · 必应资讯聚合公告 · 后台自动刷新已关闭，数据仅在打开页面或点「刷新」时更新 · 页面仅作行程参考，非道路管制依据。<br>
+    高海拔路段 10 月可能突遇初雪/结冰管制，出行前请确认 12328 及当地交警公告。<br>
+    <span id="upd"></span>
+  </footer>
+</div>
+
+<div class="modal" id="shareModal"><div class="sheet">
+  <h3>📲 分享给同行的人</h3>
+  <div class="note" id="modalNote">手机与本机需在同一 Wi-Fi 下打开</div>
+  <div class="urlbox" id="shareUrl"></div>
+  <div id="qrBox" style="text-align:center"></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+    <button class="btn" id="btnCopy">复制网址</button>
+    <button class="btn ghost" id="btnClose" style="background:var(--bg);color:var(--tx);border:1px solid var(--line)">关闭</button>
+  </div>
+</div></div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const DAYS = 10;
+const WINDOW = ['10-01','10-02','10-03','10-04','10-05','10-06','10-07'];
+
+/* ---- 静态托管/直连模式的本地内置配置（检测不到本机 API 时启用） ---- */
+const STATIC_PLACES = [
+  { id:'sayram',   name:'赛里木湖', sub:'高海拔·环湖风大',      lat:44.60, lon:81.20 },
+  { id:'kelamayi', name:'克拉玛依', sub:'途中·奎屯—克拉玛依风区', lat:45.60, lon:84.87 },
+  { id:'wuerhe',   name:'乌尔禾',   sub:'途中·魔鬼城风沙段',     lat:46.09, lon:85.69 },
+  { id:'burqin',   name:'布尔津',   sub:'S21 北段接驳',          lat:47.70, lon:86.87 },
+  { id:'altay',    name:'阿勒泰市', sub:'阿禾公路起点/S21 终点',  lat:47.84, lon:88.13 },
+  { id:'hemu',     name:'禾木村',   sub:'阿禾公路·山区',         lat:48.45, lon:87.15 },
+  { id:'kanas',    name:'喀纳斯',   sub:'高海拔湖区',            lat:48.71, lon:87.02 }
+];
+const STATIC_ROADS = [
+  { key:'sayram-burqin', name:'赛里木湖—克拉玛依—乌尔禾—布尔津（G30→G3014→G217）', watch:['sayram','kelamayi','wuerhe','burqin'], note:'长距离戈壁/风区路段，注意横风与疲劳驾驶' },
+  { key:'ahe', name:'阿禾公路（阿勒泰—禾木）', watch:['altay','hemu','kanas'], note:'山区垭口 10 月起易遇初雪/结冰管制' },
+  { key:'s21', name:'S21 阿乌高速（乌鲁木齐—阿勒泰）', watch:['burqin','altay'], note:'沙漠段横风/沙尘，注意侧风' }
+];
+let apiOk = true;   // true=本机服务聚合模式；false=纯静态直连模式
+const staticMode = () => !apiOk;
+
+let places = [], roads = [], weather = [], urls = [], newsItems = [], publicUrl = '';
+const shareTarget = () => (publicUrl || (location.origin && location.origin !== 'null' ? location.origin : (urls[0]||'')));
+
+/* ---------- WMO 天气代码 -> 中文/图标/类别 ---------- */
+function wmo(code){
+  if(code===0) return {ic:'☀️',tx:'晴'};
+  if(code===1) return {ic:'🌤',tx:'大部晴朗'};
+  if(code===2) return {ic:'⛅',tx:'局部多云'};
+  if(code===3) return {ic:'☁️',tx:'阴'};
+  if(code===45||code===48) return {ic:'🌫️',tx:'雾'};
+  if(code>=51&&code<=57) return {ic:'🌦',tx:'毛毛雨'};
+  if(code>=61&&code<=67) return {ic:'🌧️',tx:'雨'};
+  if(code>=71&&code<=77) return {ic:'❄️',tx:'雪',snow:true};
+  if(code>=80&&code<=82) return {ic:'🌦',tx:'阵雨'};
+  if(code===85||code===86) return {ic:'🌨️',tx:'阵雪',snow:true};
+  if(code>=95) return {ic:'⛈️',tx:'雷暴'};
+  return {ic:'🌡',tx:'未知'};
+}
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtD = (iso)=>{const p=iso.slice(5).split('-');return p[0]+'/'+p[1];};
+const inWin = (iso)=>WINDOW.includes(iso.slice(5));
+
+/* ---------- 风险规则 ---------- */
+function riskOf(d){
+  const out=[];
+  const snow = (d.snow||0), tmin=d.tmin, tmax=d.tmax, pop=d.pop||0,
+        wind=d.wind||0, gust=d.gust||0, precip=d.precip||0;
+  if(snow>0){ out.push({lv:'high',t:`❄️ 降雪 ${snow.toFixed(1)}cm`}); }
+  if(snow>0&&tmin<0){ out.push({lv:'high',t:'山区路面积雪+结冰，谨慎/备防滑链'}); }
+  else if(tmin<0&&precip>0.3){ out.push({lv:'mid',t:'低温有降水，路面可能结冰'}); }
+  if(tmin<0){ out.push({lv:'mid',t:`夜间低温 ${Math.round(tmin)}°C，早晚防结冰`}); }
+  if(pop>=70){ out.push({lv:'mid',t:`降水概率 ${pop}%`}); }
+  if(wind>=55||gust>=75){ out.push({lv:'high',t:`大风/强阵风（${Math.round(Math.max(wind,gust))}km/h），横风危险`}); }
+  else if(wind>=39){ out.push({lv:'mid',t:`风较大（${Math.round(wind)}km/h），注意横风`}); }
+  if(d.snow>0&&d.snow>=3){ out.push({lv:'high',t:'积雪明显，管制可能性高'}); }
+  return out;
+}
+const worst = (rs)=>{let w=0;rs.forEach(r=>{if(r.lv==='high')w=Math.max(w,2);else if(r.lv==='mid')w=Math.max(w,1);});return w;};
+
+/* ---------- 抓数据 ---------- */
+async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+
+async function loadMeta(){
+  if(location.search.indexOf('static=1')>=0){   // 强制纯静态直连模式（预览/调试用）
+    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; urls=[location.origin]; publicUrl='';
+    renderOfficial();renderSel();
+    return;
+  }
+  try{
+    const m=await jget('/api/meta');
+    places=m.places||[]; roads=m.roads||[]; urls=m.urls||[]; publicUrl=m.publicUrl||''; apiOk=true;
+  }catch(e){
+    // 纯静态托管环境：没有本机 API → 使用内置配置 + 浏览器直连天气源
+    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; urls=[location.origin]; publicUrl='';
+  }
+  const pl=$('pubLine');
+  if(publicUrl){pl.style.display='block';pl.textContent='🌐 公网地址（手机用任意网络/流量均可打开）：'+publicUrl;}
+  renderOfficial();renderSel();
+}
+/* 直连 Open-Meteo（静态模式），字段与本机 /api/weather 保持一致 */
+async function fetchOm(p){
+  const daily='weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset,uv_index_max';
+  const current='temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m';
+  const q=new URLSearchParams({latitude:String(p.lat),longitude:String(p.lon),daily,current,timezone:'Asia/Shanghai',forecast_days:String(DAYS),wind_speed_unit:'kmh'});
+  const r=await fetch('https://api.open-meteo.com/v1/forecast?'+q.toString(),{signal:AbortSignal.timeout(20000)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  const d=j.daily||{};
+  const days=(d.time||[]).map((t,i)=>({
+    date:t, code:d.weather_code?.[i], tmax:d.temperature_2m_max?.[i], tmin:d.temperature_2m_min?.[i],
+    pop:d.precipitation_probability_max?.[i], precip:d.precipitation_sum?.[i], snow:d.snowfall_sum?.[i],
+    wind:d.wind_speed_10m_max?.[i], gust:d.wind_gusts_10m_max?.[i],
+    sunrise:d.sunrise?.[i], sunset:d.sunset?.[i], uv:d.uv_index_max?.[i],
+  }));
+  const c=j.current||{};
+  return { id:p.id, name:p.name, sub:p.sub, lat:p.lat, lon:p.lon, fetchedAt:new Date().toISOString(),
+    current:{ t:c.temperature_2m, feel:c.apparent_temperature, rh:c.relative_humidity_2m, code:c.weather_code, wind:c.wind_speed_10m, precip:c.precipitation, isDay:c.is_day }, days };
+}
+async function loadWeather(force){
+  const t0=Date.now();
+  $('statusRow').innerHTML='<span class="spin"></span> 正在更新天气…';
+  let results=[], fetchedAt='';
+  if(apiOk){
+    const w=await jget('/api/weather'+(force?'?force=1':'?force=0'));
+    results=w.results||[]; fetchedAt=w.fetchedAt;
+  }else{
+    const settled=await Promise.allSettled(places.map(p=>fetchOm(p)));
+    results=settled.map((r,i)=>Object.assign({},places[i], r.status==='fulfilled'?r.value:{error:(r.reason&&r.reason.message)||'获取失败'}));
+    fetchedAt=new Date().toISOString();
+  }
+  weather=results;
+  renderCards();renderChart();renderRisks();renderRoads();renderTips();
+  const s=`天气 ${fmtTime(fetchedAt)} · 耗时 ${((Date.now()-t0)/1000).toFixed(0)}s`;
+  const ok=weather.filter(x=>!x.error).length;
+  const modeTxt=apiOk?'天气源：':'直连 Open-Meteo：';
+  $('statusRow').innerHTML=`<span class="dot ${ok===places.length?'g':'r'}"></span>${modeTxt}${ok}/${places.length}${ok<places.length?'（部分失败，可点刷新重试）':''} · ${s}`;
+  $('upd').textContent='最后更新：'+new Date().toLocaleString('zh-CN',{hour12:false});
+}
+async function loadNews(manual){
+  const box=$('newsBox'),bar=$('newsBar'),q=$('newsQ'),time=$('newsTime');
+  if(!apiOk){                      // 静态直连模式：无公告聚合服务
+    newsItems=[];
+    q.style.display='none'; time.textContent=''; bar.style.display='none'; box.style.display='none';
+    $('noticeNote').textContent='当前为静态托管模式：公告需人工查看，请用下方官方入口（gov.cn 检索 / 12328）。';
+    return;
+  }
+  if(manual){ box.style.display='block'; box.innerHTML='<div class="emptynote">正在检索政府官网公告…</div>'; bar.style.display='flex'; }
+  try{
+    const n=await jget('/api/news'+(manual?'?force=1':''));
+    newsItems=n.items||[];
+    q.style.display='inline'; q.textContent='检索：'+n.query;
+    time.textContent='更新 '+fmtTime(n.fetchedAt)+(n.cached?'（缓存）':'');
+    renderNews();
+  }catch(e){
+    box.style.display='none'; bar.style.display='none'; q.style.display='none';
+    $('noticeNote').textContent='公告检索暂不可用（'+esc(e.message)+'）；出发前请用下方官方入口确认。';
+  }
+}
+function fmtTime(iso){if(!iso)return '-';const d=new Date(iso);const p=n=>String(n).padStart(2,'0');return p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}
+
+/* ---------- 渲染 ---------- */
+function dayInfo(p,di){
+  const d=p.days[di]; if(!d)return null;
+  const w=wmo(d.code), rs=riskOf(d), level=worst(rs);
+  return {d,w,rs,level};
+}
+function cardHtml(p){
+  if(p.error)return `<div class="card"><h3>${esc(p.name)}</h3><div class="sub">${esc(p.sub)}</div><div class="emptynote">天气获取失败：${esc(p.error)}</div></div>`;
+  const c=p.current, t0=c&&c.t!=null?c.t:null;
+  const today=p.days[0]||{};
+  const wc=(c&&c.code!=null)?wmo(c.code):wmo(today.code);
+  let cells='';
+  p.days.forEach((d,di)=>{
+    const w=wmo(d.code),cls=['mcell'];
+    if(d.snow>0)cls.push('snow');
+    if(inWin(d.date))cls.push('hl');
+    const dow=['日','一','二','三','四','五','六'][new Date(d.date+'T00:00:00').getDay()];
+    cells+=`<button class="${cls.join(' ')}" data-p="${p.id}" data-di="${di}">
+      <span class="dow">${d.date.slice(8)}(${dow})</span>
+      <span class="ic">${w.ic}</span>
+      <span class="tm"><i style="color:#2f6fd0;font-style:normal">${Math.round(d.tmin)}°</i> <b style="color:#d63c3c">${Math.round(d.tmax)}°</b></span>
+      ${d.snow>0?'<span class="tm" style="color:#3f8ef0">❄'+Number(d.snow).toFixed(1)+'cm</span>':''}
+    </button>`;
+  });
+  const passTag=(p.sub||'').indexOf('途中')===0?'<span class="tag m">🛣 途中</span>':'';
+  const sunSpan=(today.sunrise&&today.sunset)?`<span>🌅${today.sunrise.slice(11,16)}</span><span>🌇${today.sunset.slice(11,16)}</span>`:'';
+  return `<div class="card" id="card-${p.id}">
+    <div class="c-head">
+      <div class="c-info">
+        <h3>${passTag}${esc(p.name)}<span class="sub">${esc(p.sub)}</span></h3>
+        <div class="mm-line">
+          <span>今日 <b>${Math.round(today.tmax||0)}°</b>/<i>${Math.round(today.tmin||0)}°</i></span>
+          <span>💧 ${today.pop??'-'}%</span>
+          <span>🌬 ${Math.round(today.wind||0)} km/h</span>
+          ${today.snow>0?`<span style="color:#3f8ef0">❄ ${Number(today.snow).toFixed(1)}cm</span>`:''}
+          ${sunSpan}
+        </div>
+      </div>
+      <div class="c-now">
+        <span class="ic">${wc.ic}</span>
+        <span class="t">${t0!=null?Math.round(t0)+'°':Math.round(today.tmax||0)+'°'}</span>
+        <span class="lbl">${t0!=null?'当前':'今日高'}</span>
+      </div>
+    </div>
+    <div class="mini">${cells}</div>
+    <div class="detail" id="det-${p.id}"></div>
+  </div>`;
+}
+function renderCards(){
+  $('cards').innerHTML=weather.map(cardHtml).join('');
+  document.querySelectorAll('.mcell').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const p=weather.find(x=>x.id===b.dataset.p);const di=+b.dataset.di;const d=p&&p.days[di];if(!d)return;
+      const el=$('det-'+p.id);const w=wmo(d.code);
+      const rs=riskOf(d).map(r=>`<div class="risk ${r.lv}" style="margin:3px 0;padding:4px 8px">${esc(r.t)}</div>`).join('');
+      el.innerHTML=`<b style="font-size:12px">${esc(p.name)} · ${d.date}（${w.tx} ${w.ic}）</b>
+        <div>最高 ${Math.round(d.tmax)}° / 最低 ${Math.round(d.tmin)}° · 降水概率 ${d.pop??'-'}%
+        · 风 ${Math.round(d.wind)}km/h（阵风${Math.round(d.gust)}km/h）· 紫外线 ${d.uv??'-'}
+        · 日照 ${(d.sunrise||'--').slice(11,16)}–${(d.sunset||'--').slice(11,16)}</div>${rs}`;
+      el.classList.toggle('show');
+    });
+  });
+}
+function renderSel(){
+  const sel=$('chartSel');sel.innerHTML='';
+  places.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o);});
+  sel.addEventListener('change',renderChart);
+}
+function renderChart(){
+  const id=$('chartSel').value||(places[0]&&places[0].id);
+  const p=weather.find(x=>x.id===id)||weather[0];
+  const box=$('chartBox');if(!p){box.innerHTML='<div class="emptynote">暂无数据</div>';return;}
+  const W=720,H=300,pl=34,pr=30,pt=18,pb=34;
+  const days=p.days;if(!days.length)return;
+  const mins=days.map(d=>d.tmin),maxs=days.map(d=>d.tmax);
+  let yMin=Math.floor(Math.min.apply(null,mins.concat([-2]))-2);
+  let yMax=Math.ceil(Math.max.apply(null,maxs)+2);
+  yMin=Math.min(yMin,-2);
+  const iw=W-pl-pr, ih=H-pt-pb, n=days.length, step=iw/(n-1);
+  const X=i=>pl+i*step, Y=v=>pt+ih-(v-yMin)/(yMax-yMin)*ih;
+  const snowMax=Math.max(1,Math.max.apply(null,days.map(d=>d.snow||0)));
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:560px">
+  <defs><linearGradient id="gmax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d63c3c" stop-opacity=".25"/><stop offset="1" stop-color="#d63c3c" stop-opacity="0"/></linearGradient></defs>`;
+  // 网格与Y轴
+  for(let g=0;g<=5;g++){const v=yMin+(yMax-yMin)*g/5,y=Y(v);
+    s+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="2" y="${y+3}">${Math.round(v)}°</text>`;}
+  // 国庆窗口背景
+  days.forEach((d,i)=>{if(inWin(d.date)){s+=`<rect x="${X(i)-step/2}" y="${pt}" width="${step}" height="${ih}" fill="rgba(217,165,20,.13)"/>`;}});
+  // 降雪柱
+  days.forEach((d,i)=>{const h=(d.snow||0)/snowMax*(ih*0.55);const x=X(i)-step*0.18;
+    if((d.snow||0)>0){s+=`<rect x="${x}" y="${H-pb-h}" width="${step*0.36}" height="${h}" rx="2" fill="#3f8ef0" opacity=".8"><title>❄ ${d.snow}cm</title></rect>`;}});
+  const pts=(arr)=>arr.map((v,i)=>X(i)+','+Y(v)).join(' ');
+  let area = pts(maxs);
+  for(let i=n-1;i>=0;i--){ area += ' '+X(i)+','+(pt+ih); }
+  s+=`<polyline points="${pts(maxs)}" fill="none" stroke="#d63c3c" stroke-width="2"/>`;
+  s+=`<polygon points="${area}" fill="url(#gmax)" stroke="none"/>`;
+  s+=`<polyline points="${pts(mins)}" fill="none" stroke="#2f6fd0" stroke-width="2"/>`;
+  // X 轴标签与温度点
+  days.forEach((d,i)=>{
+    const w=wmo(d.code);
+    s+=`<text x="${X(i)}" y="${pt+ih+14}" text-anchor="middle">${fmtD(d.date)}</text>`;
+    s+=`<text x="${X(i)}" y="${pt+ih+26}" text-anchor="middle">${w.ic}</text>`;
+    s+=`<circle cx="${X(i)}" cy="${Y(d.tmax)}" r="3" fill="#d63c3c"><title>最高 ${d.tmax}°</title></circle>`;
+    s+=`<circle cx="${X(i)}" cy="${Y(d.tmin)}" r="3" fill="#2f6fd0"><title>最低 ${d.tmin}°</title></circle>`;
+  });
+  s+='</svg>';
+  box.innerHTML=s;
+  box.innerHTML+=`<div style="font-size:11px;color:var(--mut)"><span style="color:#d63c3c">— 最高温</span> · <span style="color:#2f6fd0">— 最低温</span> · <span style="color:#3f8ef0">▮ 降雪(cm)</span></div>`;
+}
+function renderRisks(){
+  const sec=$('riskSec'), box=$('riskBox');
+  const dayLbl=['今天','明天','后天'];
+  const items=[];
+  weather.forEach(p=>{
+    if(!p.days) return;
+    for(let di=0;di<3;di++){
+      const d=p.days[di]; if(!d) continue;
+      riskOf(d).forEach(r=>{
+        if(r.lv==='high'||r.lv==='mid') items.push({lbl:dayLbl[di], date:d.date, place:p.name, lv:r.lv, t:r.t});
+      });
+    }
+  });
+  if(!items.length){                        // 无明显恶劣天气：整块折叠
+    sec.style.display='none';
+    box.innerHTML='';
+    return;
+  }
+  sec.style.display='block';
+  items.sort((a,b)=>(({high:0,mid:1}[a.lv])-({high:0,mid:1}[b.lv])) || a.date.localeCompare(b.date));
+  const focus=[...new Set(items.map(i=>i.place))];
+  const high=[...new Set(items.filter(i=>i.lv==='high').map(i=>i.place))];
+  const sm=$('riskTitle').querySelector('small');
+  sm.textContent='关注城市：'+focus.join('、')+(high.length?' ⚠️ '+high.join('、')+' 风险较高':'')+' · 近3天';
+  box.innerHTML=items.map(i=>`<div class="risk ${i.lv}"><b>${esc(i.place)} · ${i.lbl} ${i.date.slice(5).replace('-','/')}</b> ${esc(i.t)}</div>`).join('');
+}
+function renderRoads(){
+  const list=$('roadList');let html='';
+  roads.forEach(r=>{
+    const src=weather.filter(w=>r.watch.includes(w.id)&&w.days&&w.days[0]);
+    const ts=[];
+    src.forEach(p=>{
+      riskOf(p.days[0]).forEach(rr=>{
+        if(rr.lv==='high'||rr.lv==='mid') ts.push({lv:rr.lv,t:`${p.name}：${rr.t}`});
+      });
+    });
+    const seen=new Set();const merged=ts.filter(x=>{if(seen.has(x.t))return false;seen.add(x.t);return true;}).slice(0,3);
+    const hasHigh=merged.some(x=>x.lv==='high');
+    const badge=hasHigh?'<span class="tag h">注意</span>':(merged.length?'<span class="tag m">关注</span>':'<span class="tag ok">平稳</span>');
+    html+=`<li>${badge}<b>${esc(r.name)}</b> <span style="color:var(--mut)">${esc(r.note)}</span>`;
+    if(merged.length){
+      html+='<br>'+merged.map(x=>`<span class="tag ${x.lv==='high'?'h':'m'}">${esc(x.t)}</span>`).join(' ');
+    }
+    html+='</li>';
+  });
+  list.innerHTML=html;$('roadSec').style.display='block';
+}
+function renderNews(){
+  const box=$('newsBox'),bar=$('newsBar'),q=$('newsQ'),time=$('newsTime');
+  if(!newsItems.length){
+    box.style.display='none'; bar.style.display='none';
+    q.style.display='none'; time.textContent='';
+    $('noticeNote').textContent='未检索到新的官方（政府/景区 gov.cn）公告，此区域自动隐藏；出发前请用下方官方入口确认。';
+    return;
+  }
+  box.style.display='block'; bar.style.display='flex'; q.style.display='inline';
+  $('noticeNote').textContent='';
+  box.innerHTML=newsItems.slice(0,14).map(n=>{
+    const date=n.pubDate?fmtPub(n.pubDate):'';
+    return `<div class="item"><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}<br><span style="color:var(--mut);font-size:10.5px">${esc(n.source||'')}</span></a><span class="d">${date}</span></div>`;
+  }).join('');
+}
+function fmtPub(rfc){const d=new Date(rfc);if(isNaN(d))return'';const p=n=>String(n).padStart(2,'0');return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function renderOfficial(){
+  const searches=[
+    ['🔍 阿禾公路 官方公告', '阿禾公路 交通管制 封闭 site:gov.cn'],
+    ['🔍 S21阿乌高速 官方公告', 'S21阿乌高速 交通管制 路况 site:gov.cn'],
+    ['🔍 喀纳斯/禾木 景区公告', '喀纳斯 禾木 降雪 交通 site:gov.cn'],
+    ['🔍 布尔津 官方公告', '布尔津 道路 交通管制 site:gov.cn'],
+  ];
+  const bing=q=>'https://cn.bing.com/search?q='+encodeURIComponent(q);
+  const officialLinks=[
+    ['交通运输部（12328 全国交通服务监督）', 'https://www.mot.gov.cn/'],
+    ['新疆维吾尔自治区交通运输厅', 'https://jtyst.xinjiang.gov.cn/'],
+  ];
+  $('officialRow').innerHTML=searches.map(s=>`<a href="${bing(s[1])}" target="_blank" rel="noopener">${esc(s[0])}</a>`).join('')
+    + officialLinks.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])}</a>`).join('')
+    + '<a href="https://cn.bing.com/search?q='+encodeURIComponent('阿勒泰交警 布尔津交警 微博')+'" target="_blank" rel="noopener">🔍 阿勒泰/布尔津交警（微博检索）</a>';
+}
+function renderTips(){
+  const t=weather.filter(x=>x.days&&x.days[0]);
+  let html=`<b>🚑 行前 3 件事：</b>① 出发前一天拨 12328 / 当地交警确认封路；② 10 月山区随时可能下雪，<b>建议备防滑链与-10°C睡袋级保暖</b>；③ 阿禾公路高海拔段与 S21 沙漠段，日落前后温差大、易起雾起风，尽量白天行车。
+  <br><b>🧥 穿衣参考（按预报）：</b>`;
+  t.slice(0,3).forEach(p=>{
+    const d0=p.days[0],d1=p.days[1];
+    const lo=Math.min(d0.tmin,d1?d1.tmin:d0.tmin),hi=Math.max(d0.tmax,d1?d1.tmax:d0.tmax);
+    html+=`${esc(p.name)} ${Math.round(lo)}~${Math.round(hi)}°（${lo<0?'❄ 需厚羽绒/防寒':'早晚加厚外套'}）；`;
+  });
+  $('tips').innerHTML=html;
+}
+
+/* ---------- 定时刷新与按钮 ---------- */
+$('btnRefresh').addEventListener('click',async()=>{
+  $('btnRefresh').disabled=true;
+  try{await loadWeather(true);await loadNews(true);}catch(e){$('statusRow').innerHTML='<span class="dot r"></span>刷新失败：'+esc(e.message);}
+  $('btnRefresh').disabled=false;
+});
+$('newsRefresh').addEventListener('click',()=>loadNews(true));
+$('btnScan').addEventListener('click',()=>{ if(apiOk){ window.open('/scan','_blank'); } else { $('btnShare').click(); } });
+$('btnShare').addEventListener('click',()=>{
+  const m=$('shareModal');m.classList.add('show');
+  const url=shareTarget();
+  $('modalNote').textContent = (publicUrl || !apiOk)
+    ? '手机用任意网络（含 4G/5G 流量）均可打开；刷新数据请点页面顶部「刷新」'
+    : '手机与本机需在同一 Wi-Fi 下打开';
+  $('shareUrl').textContent=url;
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=6&data='+encodeURIComponent(url);
+  $('qrBox').innerHTML=`<img src="${qr}" width="220" height="220" alt="二维码" onerror="this.style.display='none'">`;
+});
+$('btnClose').addEventListener('click',()=>$('shareModal').classList.remove('show'));
+$('shareModal').addEventListener('click',e=>{if(e.target===$('shareModal'))$('shareModal').classList.remove('show');});
+$('btnCopy').addEventListener('click',async()=>{
+  const url=shareTarget();
+  try{await navigator.clipboard.writeText(url);$('btnCopy').textContent='已复制 ✓';}
+  catch(e){$('btnCopy').textContent='复制失败，请长按网址';}
+  setTimeout(()=>$('btnCopy').textContent='复制网址',2000);
+});
+
+(async function init(){
+  try{
+    await loadMeta();                       // 内部自动判断：本机API or 纯静态直连
+    await Promise.all([loadWeather(false),loadNews(false)]);
+  }catch(e){
+    $('statusRow').innerHTML='<span class="dot r"></span>加载失败：'+esc(e.message)+'（请点顶部「刷新」重试）';
+    $('riskBox').innerHTML='<div class="emptynote">'+esc(e.message)+'</div>';
+  }
+  // 自动后台刷新已按要求关闭：数据仅在打开页面或手动点「刷新」时更新
+})();
+</script>
+</body>
+</html>
