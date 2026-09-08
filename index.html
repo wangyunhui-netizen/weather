@@ -138,6 +138,7 @@ header{position:relative;overflow:hidden}
 .mroute{fill:none;stroke:#bfe3ff;stroke-width:2.5;stroke-dasharray:7 6;opacity:.85}
 .mend{fill:#ff9d5c;stroke:#fff;stroke-width:2}
 .mapnote{font-size:11px;color:var(--mut);margin-top:4px}
+.maphint{margin-top:8px;font-size:12.5px;color:var(--tx);background:rgba(47,111,208,.1);border:1px solid rgba(47,111,208,.35);border-radius:10px;padding:7px 10px;line-height:1.6}
 .legs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .legchip{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:4px 9px;font-size:11.5px;line-height:1.5;color:var(--tx)}
 .legchip b{color:var(--accent)}
@@ -151,16 +152,16 @@ header{position:relative;overflow:hidden}
 .drow{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;line-height:1.7;color:var(--tx)}
 .dbtn{display:inline-block;margin-top:8px;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:6px 10px;font-size:12.5px;color:var(--accent);cursor:pointer}
 .dclose{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:4px 12px;font-size:12.5px;color:var(--tx);cursor:pointer}
-/* ===== 大气头部（1.5x） ===== */
-header{padding:50px 30px 36px;border-radius:0 0 34px 34px}
-header h1{font-size:46px;line-height:1.2;letter-spacing:1px}
-header .sub{font-size:21px;margin-top:12px;opacity:.96}
-.hbar{margin-top:26px;gap:12px}
+/* ===== 大气头部（字体已缩小1/3） ===== */
+header{padding:44px 26px 30px;border-radius:0 0 30px 30px}
+header h1{font-size:31px;line-height:1.25;letter-spacing:.5px}
+header .sub{font-size:14px;margin-top:10px;opacity:.96}
+.hbar{margin-top:18px;gap:10px}
 .hbg{opacity:.72}
-.chip{font-size:19px;padding:9px 20px;border-radius:999px}
-.btn{font-size:20px;padding:13px 24px}
-.statusrow{font-size:14px;margin-top:14px}
-#pubLine{font-size:14px}
+.chip{font-size:13px;padding:7px 15px;border-radius:999px}
+.btn{font-size:13px;padding:9px 17px}
+.statusrow{font-size:13px;margin-top:12px}
+#pubLine{font-size:13px}
 /* ===== 城市景色横幅 ===== */
 .scb{position:relative;height:108px;background-size:cover;background-position:center;border-radius:12px;display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;margin-bottom:10px;color:#fff;overflow:hidden}
 .scb-tag{position:absolute;top:8px;left:10px}
@@ -217,6 +218,7 @@ header .sub{font-size:21px;margin-top:12px;opacity:.96}
     <h2>🗺 自驾路线地图 <small id="mapModeTag">接入高德后将显示真实在线地图</small></h2>
     <div id="amapBox" style="display:none"><div id="amapContainer" style="width:100%;height:420px;border-radius:14px;overflow:hidden"></div></div>
     <div class="mapwrap" id="mapBox"></div>
+    <div class="maphint">📱 手机上轻点地图中的<b>城市圆形图标</b>即可弹出信息抽屉（单点即开，无需双击）；抽屉里可“一键高德导航前往”。</div>
     <div class="legs" id="legList"></div>
     <div class="mapnote">点地图/示意图上的城市 → 弹信息抽屉，可一键“高德导航前往”。里程/时长为驾车估算，接入高德 Key 后自动换成实时规划。</div>
   </section>
@@ -814,7 +816,7 @@ function startAMap(){
   places.forEach((p,pi)=>{
     const content='<div class="amark" style="min-width:'+(pi===0?56:46)+'px;background:'+(pi===0?'#d63c3c':'#0b6bbf')+';color:#fff;border-radius:14px;padding:4px 9px;font-size:12px;font-weight:600;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.35);border:2px solid #fff">'+(pi===0?'① 起/终 ':'')+esc(p.name)+'</div>';
     const mk=new AMap.Marker({ position:[p.lon,p.lat], title:p.name, content, anchor:'bottom-center' });
-    mk.on('click',()=>{ try{ map.setZoomAndCenter(9,[p.lon,p.lat]); }catch(_){} openDrawer(p.id); });
+    mk.on('click',()=>{ openDrawer(p.id); });   // 单点即开抽屉（手机轻点一次即可）
     map.add(mk);
   });
   runNext();
