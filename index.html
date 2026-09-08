@@ -151,6 +151,23 @@ header{position:relative;overflow:hidden}
 .drow{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;line-height:1.7;color:var(--tx)}
 .dbtn{display:inline-block;margin-top:8px;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:6px 10px;font-size:12.5px;color:var(--accent);cursor:pointer}
 .dclose{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:4px 12px;font-size:12.5px;color:var(--tx);cursor:pointer}
+/* ===== 大气头部 ===== */
+header{padding:32px 20px 22px;border-radius:0 0 24px 24px}
+header h1{font-size:30px;line-height:1.25}
+header .sub{font-size:14px;margin-top:8px}
+.hbar{margin-top:16px}
+.hbg{opacity:.68}
+.chip{font-size:13px;padding:5px 12px}
+.btn{font-size:14px;padding:9px 14px}
+/* ===== 城市景色横幅 ===== */
+.scb{position:relative;height:108px;background-size:cover;background-position:center;border-radius:12px;display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;margin-bottom:10px;color:#fff;overflow:hidden}
+.scb-tag{position:absolute;top:8px;left:10px}
+.scb-name{font-size:19px;font-weight:800;text-shadow:0 2px 6px rgba(0,0,0,.55);letter-spacing:.5px}
+.scb-sub{font-size:11.5px;opacity:.95;text-shadow:0 1px 4px rgba(0,0,0,.6);margin-top:1px}
+/* ===== 趋势图城市背景 ===== */
+.chartwrap{position:relative;border-radius:12px;overflow:hidden}
+.chartbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.24;filter:blur(2px)}
+#chartBox{position:relative}
 </style>
 </head>
 <body>
@@ -190,7 +207,7 @@ header{position:relative;overflow:hidden}
     <h2>📈 温度与降雪趋势
       <small><select id="chartSel" style="background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:3px 6px;font-size:12px"></select></small>
     </h2>
-    <div class="svgshell" id="chartBox"></div>
+    <div class="chartwrap"><div class="chartbg" id="chartBg"></div><div class="svgshell" id="chartBox"></div></div>
     <div class="note">金色底为出行窗口(10.01–10.07)；柱状为每日降雪量(cm)。</div>
   </section>
 
@@ -447,10 +464,15 @@ function cardHtml(p){
     snowBlock=`<div class="snowbar"><span class="lbl">❄ 降雪预报</span>${chips}${more}${risk}</div>
       <div class="snowtip">数值为该日累计降雪量(cm)；降水概率为当日雨雪合计概率（预报不含“纯降雪概率”），供参考。</div>`;
   }
+  const scene=p.id+'.jpg';
   return `<div class="card" id="card-${p.id}">
+    <div class="scb" style="background-image:linear-gradient(180deg,rgba(8,20,35,.05) 30%,rgba(8,20,35,.72)),url('./sc/${scene}')">
+      ${passTag?`<span class="scb-tag">🛣 途中</span>`:''}
+      <span class="scb-name">${esc(p.name)}</span>
+      <span class="scb-sub">${esc(p.sub)}</span>
+    </div>
     <div class="c-head">
       <div class="c-info">
-        <h3>${passTag}${esc(p.name)}<span class="sub">${esc(p.sub)}</span></h3>
         <div class="mm-line">
           <span>今日 <b>${Math.round(today.tmax||0)}°</b>/<i>${Math.round(today.tmin||0)}°</i></span>
           <span>💧 ${today.pop??'-'}%</span>
@@ -492,6 +514,7 @@ function renderSel(){
 }
 function renderChart(){
   const id=$('chartSel').value||(places[0]&&places[0].id);
+  const bg=$('chartBg'); if(bg&&id) bg.style.backgroundImage="url('./sc/"+id+".jpg')";
   const p=weather.find(x=>x.id===id)||weather[0];
   const box=$('chartBox');if(!p){box.innerHTML='<div class="emptynote">暂无数据</div>';return;}
   const W=720,H=300,pl=34,pr=30,pt=18,pb=34;
@@ -686,14 +709,22 @@ const EST_KMS = { 'urumqi-sayram':[540,6.5], 'sayram-kuytun':[250,3], 'kuytun-ke
   'kelamayi-burqin':[320,4], 'burqin-kanas':[140,3], 'kanas-hemu':[60,1.5], 'hemu-altay':[120,2.5], 'altay-urumqi':[470,5.5] };
 function legKey(a,b){ return a.id+'-'+b.id; }
 
+function estFor(i,j){
+  const a=places[i],b=places[j]; const k=legKey(a,b); const e=EST_KMS[k]||[0,0];
+  return {a,b,km:e[0]||0,h:e[1]||0,est:true};
+}
+function fmtH(h){ return h>=10?Math.round(h):Number(h).toFixed(1); }
 function renderLegs(list){
   const wrap=$('legList');
-  if(!list) list=legPairs().map(([i,j])=>{
-    const a=places[i],b=places[j]; const k=legKey(a,b); const est=EST_KMS[k]||[0,0];
-    return {a:a,b:b,km:est[0],h:est[1],est:true};
+  if(!list) list=legPairs().map(([i,j])=>estFor(i,j));
+  else list=list.map(L=>{
+    if(!L.est && L.km>0) return L;                       // 高德实时结果
+    const i=places.findIndex(x=>x.id===L.a.id);
+    const j=places.findIndex(x=>x.id===L.b.id);
+    return estFor(i<0?0:i,j<0?1:j);                      // 失败/缺失 → 估算兜底
   });
   wrap.innerHTML=list.map((L,i)=>`<span class="legchip">${i+1}. ${esc(L.a.name)}→${esc(L.b.name)}<br>
-    ${L.est?'≈':''}<b>${Math.round(L.km)}km</b> · ${L.h<10?L.h.toFixed(1):Math.round(L.h)}h${L.est?'（估）':''}</span>`).join('');
+    ${L.km>0?(L.est?'≈':'')+'<b>'+Math.round(L.km)+'km</b> · '+fmtH(L.h)+'h'+(L.est?'（估）':''):'—— 待计算 ——'}</span>`).join('');
 }
 function drawSchematic(){
   const box=$('mapBox'); if(!places.length) return;
@@ -703,13 +734,22 @@ function drawSchematic(){
   const Y=p=>MY+(lat1-p.lat)/(lat1-lat0)*(H-MY*2);
   const pts=places.map(p=>({id:p.id,name:p.name,x:X(p),y:Y(p)}));
   let d=''; pts.forEach((p,i)=>{ d+=(i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; }); d+='L'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
-  let s=`<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><path class="mroute" d="${d}"/>`;
+  let s=`<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<path class="mroute" d="${d}"/>`;
+  // 段间方向箭头（含最后一段回到起点）
+  const n=pts.length;
+  for(let i=0;i<n;i++){
+    const a=pts[i],b=pts[(i+1)%n];
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+    s+=`<text x="${mx}" y="${my}" text-anchor="middle" transform="rotate(${ang} ${mx} ${my})" style="font-size:20px;fill:#ffd76a;paint-order:stroke;stroke:rgba(10,20,30,.6);stroke-width:2px">➤</text>`;
+  }
   pts.forEach((p,i)=>{
     const first=(i===0), above=(p.y<130)||(i>=pts.length-2&&p.y<170);
     s+=`<g class="mcity" data-id="${p.id}">
-      <circle cx="${p.x}" cy="${p.y}" r="${first?19:16}"/>
+      <circle cx="${p.x}" cy="${p.y}" r="${first?20:16}"/>
       <text class="num" x="${p.x}" y="${p.y+4.5}">${i+1}</text>
-      <text class="lab" x="${p.x}" y="${(above?p.y+26:p.y-26)+4}" text-anchor="middle">${esc(p.name)}${first?'（起/终）':''}</text></g>`;
+      <text class="lab" x="${p.x}" y="${(above?p.y+27:p.y-27)+4}" text-anchor="middle">${esc(p.name)}${first?'（起/终）':''}</text></g>`;
   });
   s+='</svg>';
   box.innerHTML=s;
@@ -718,60 +758,64 @@ function drawSchematic(){
 function renderMap(){
   const tag=$('mapModeTag');
   if(!AMAP_KEY){
-    tag.textContent='示意图模式 · 接入高德 Key 后显示真实地图';
+    tag.textContent='示意图模式 · 里程为驾车估算';
     $('amapBox').style.display='none'; $('mapBox').style.display='block';
     drawSchematic(); renderLegs(null);
     return;
   }
-  tag.textContent='高德真实地图 · 里程为驾车实时规划';
+  tag.textContent='正在加载高德地图…';
   loadAMap();
 }
 function loadAMap(){
-  if(amapOk || window.AMap){ startAMap(); return; }
+  if(window.AMap){ startAMap(); return; }
   if(document.getElementById('amapjs')) return;
   const sc=document.createElement('script');
   sc.id='amapjs';
   sc.src='https://webapi.amap.com/maps?v=2.0&key='+AMAP_KEY+'&plugin=AMap.Driving,AMap.Scale';
-  sc.onload=()=>{ window._AMapSecurityConfig={securityJsCode:AMAP_SEC}; startAMap(); };
-  sc.onerror=()=>{ $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); tagNote('高德加载失败，已回退示意图'); };
+  sc.onload=()=>{ window._AMapSecurityConfig={securityJsCode:AMAP_SEC}; try{ startAMap(); }catch(e){ console.warn(e); tagNote('高德初始化失败，已回退示意图'); $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); } };
+  sc.onerror=()=>{ $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); tagNote('高德加载失败，已回退示意图（请检查 Key 服务平台是否为 Web端 JS API）'); };
   document.head.appendChild(sc);
 }
 function tagNote(t){ const n=$('mapModeTag'); if(n) n.textContent=t; }
+const ROUTE_COLORS=['#0b6bbf','#2f6fd0','#3f8ef0','#7a5cff','#e057a8','#e8900c','#d63c3c','#1a9c5a'];
 function startAMap(){
-  try{
-    const box=$('mapBox'), am=$('amapBox');
-    am.style.display='block'; box.style.display='none'; box.innerHTML='';
-    const map=new AMap.Map('amapContainer',{ zoom:6, center:[86.5,46.2], mapStyle:'amap://styles/whitesmoke' });
-    map.addControl(new AMap.Scale());
-    const driving=new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME });
-    const legs=legPairs(); const rows=[];
-    let idx=0;
-    const runNext=()=>{
-      if(idx>=legs.length){ renderLegs(rows); return; }
-      const [i,j]=legs[idx]; const a=places[i],b=places[j];
-      driving.search([a.lon,a.lat],[b.lon,b.lat],(status,res)=>{
-        idx++;
-        if(status==='complete'&&res.routes&&res.routes[0]){
-          const rt=res.routes[0];
-          const path=rt.steps.map(s=>s.path).flat().map(c=>[c.lng,c.lat]);
-          const line=new AMap.Polyline({path,strokeColor:'#2f6fd0',strokeWeight:5,strokeOpacity:.75,lineJoin:'round'});
+  const box=$('mapBox'), am=$('amapBox');
+  am.style.display='block'; box.style.display='none'; box.innerHTML='';
+  const map=new AMap.Map('amapContainer',{ zoom:6, center:[86.5,46.2], mapStyle:'amap://styles/whitesmoke' });
+  map.addControl(new AMap.Scale());
+  const driving=new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME, extensions:'base' });
+  const legs=legPairs(); const rows=[]; let idx=0;
+  const runNext=()=>{
+    if(idx>=legs.length){ renderLegs(rows); setTimeout(()=>{ try{ map.setFitView(null,false,[70,70,70,70]); }catch(_){} },300); return; }
+    const [i,j]=legs[idx]; const a=places[i],b=places[j]; idx++;
+    driving.search([a.lon,a.lat],[b.lon,b.lat],(status,res)=>{
+      if(status==='complete'&&res.routes&&res.routes[0]){
+        const rt=res.routes[0];
+        const path=(rt.steps||[]).map(s=>s.path||[]).flat().map(c=>[c.lng,c.lat]);
+        if(path.length>1){
+          const line=new AMap.Polyline({path,strokeColor:ROUTE_COLORS[(idx-1)%ROUTE_COLORS.length],
+            strokeWeight:6,strokeOpacity:.85,lineJoin:'round',lineCap:'round',showDir:true,dirColor:'#0b6bbf'});
           map.add(line);
-          rows.push({a:a,b:b,km:rt.distance/1000,h:rt.time/3600,est:false});
-          if(path.length){ const mid=path[Math.floor(path.length/2)]; map.add(new AMap.Marker({position:mid,content:'<div style="background:#fff;border-radius:8px;padding:2px 6px;font-size:11px;color:#333">'+(rt.distance/1000).toFixed(0)+'km · '+(rt.time/3600).toFixed(1)+'h</div>',offset:new AMap.Pixel(0,-10)})); }
-        } else { rows.push({a:a,b:b,km:0,h:0,est:true}); }
-        runNext();
-      });
-    };
-    places.forEach(p=>{
-      const mk=new AMap.Marker({ position:[p.lon,p.lat], title:p.name,
-        content:'<div class="amark" data-id="'+p.id+'" style="min-width:46px;background:#0b6bbf;color:#fff;border-radius:12px;padding:3px 8px;font-size:12px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)">'+p.name+'</div>' });
-      map.add(mk);
+          const mid=path[Math.floor(path.length/2)];
+          map.add(new AMap.Marker({position:mid,offset:new AMap.Pixel(0,-12),
+            content:'<div style="background:#fff;border:1px solid #d0d9e4;border-radius:10px;padding:2px 7px;font-size:11.5px;color:#17222f;box-shadow:0 2px 6px rgba(0,0,0,.2)"><b>'+(rt.distance/1000).toFixed(0)+' km</b> · '+fmtH(rt.time/3600)+'h</div>'}));
+        }
+        rows.push({a,b,km:rt.distance/1000,h:rt.time/3600,est:false});
+      }else{
+        // 高德未返回路线（配额/Key 平台不符等）：画直线虚线 + 估算里程
+        map.add(new AMap.Polyline({path:[[a.lon,a.lat],[b.lon,b.lat]],strokeColor:'#94a3b8',strokeWeight:3,strokeStyle:'dashed',strokeOpacity:.6,showDir:true}));
+        rows.push(estFor(i,j));
+      }
+      runNext();
     });
-    map.on('click',e=>{ const el=e.originalEvent&&e.originalEvent.target; const t=el&&el.closest?el.closest('.amark'):null; if(t){ map.setZoomAndCenter(8,[Number(e.lnglat.lng),Number(e.lnglat.lat)]); openDrawer(t.dataset.id);} });
-    setTimeout(()=>{ try{ map.setFitView(null,false,[60,60,60,60],90); }catch(_){ } },400);
-    runNext();
-    amapOk=true;
-  }catch(e){ console.warn('amap fail',e); $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); }
+  };
+  places.forEach((p,pi)=>{
+    const content='<div class="amark" style="min-width:'+(pi===0?56:46)+'px;background:'+(pi===0?'#d63c3c':'#0b6bbf')+';color:#fff;border-radius:14px;padding:4px 9px;font-size:12px;font-weight:600;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.35);border:2px solid #fff">'+(pi===0?'① 起/终 ':'')+esc(p.name)+'</div>';
+    const mk=new AMap.Marker({ position:[p.lon,p.lat], title:p.name, content, anchor:'bottom-center' });
+    mk.on('click',()=>{ try{ map.setZoomAndCenter(9,[p.lon,p.lat]); }catch(_){} openDrawer(p.id); });
+    map.add(mk);
+  });
+  runNext();
 }
 function openDrawer(id){
   const p=places.find(x=>x.id===id)||{};
