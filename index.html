@@ -7,7 +7,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <meta name="mobile-web-app-capable" content="yes">
-<title>新疆自驾 · 国庆路况气象台</title>
+<title>新疆自驾 · 路况气象台</title>
 <style>
 :root{
   --bg:#eef3f8; --card:#ffffff; --line:#dde5ee; --tx:#17222f; --mut:#5f7080;
@@ -104,15 +104,47 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
 .note{font-size:11px;color:var(--mut);margin-top:6px}
+/* ===== 门票/攻略 折叠卡片 ===== */
+.tick{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.tick summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tick summary::-webkit-details-marker{display:none}
+.tick[open] summary{border-bottom:1px dashed var(--line)}
+.tick summary .tk-ic{font-size:17px}
+.tick summary .tk-name{font-weight:600}
+.tick summary .tk-price{color:var(--high);font-weight:600;font-size:12px;text-align:right;min-width:0}
+.tk-body{padding:6px 12px 12px;font-size:12.5px;line-height:1.8;color:var(--tx)}
+.tk-body b{color:var(--accent)}
+.tk-crowd{display:inline-block;background:rgba(214,60,60,.13);color:#d63c3c;border:1px solid rgba(214,60,60,.4);border-radius:6px;padding:1px 8px;font-size:11px;font-weight:600}
+.tk-crowd.mid{background:rgba(232,144,12,.15);color:#b06d00;border-color:rgba(232,144,12,.5)}
+/* ===== 路线地图 ===== */
+.mapwrap{margin-top:8px}
+.mapsvg{width:100%;height:auto;display:block;background:linear-gradient(165deg,#0a3155,#0f6a9e 70%,#148aa8);border-radius:14px;touch-action:manipulation}
+.mcity{cursor:pointer}
+.mcity circle{fill:#ffd76a;stroke:#fff;stroke-width:2}
+.mcity text.num{fill:#0b3d66;font-weight:700;font-size:13px;text-anchor:middle}
+.mcity text.lab{fill:#fff;font-size:12px;text-anchor:middle;paint-order:stroke;stroke:rgba(10,20,30,.7);stroke-width:3px}
+.mroute{fill:none;stroke:#bfe3ff;stroke-width:2.5;stroke-dasharray:7 6;opacity:.85}
+.mend{fill:#ff9d5c;stroke:#fff;stroke-width:2}
+.mapnote{font-size:11px;color:var(--mut);margin-top:4px}
+/* ===== 底部抽屉 ===== */
+.scrim{position:fixed;inset:0;background:rgba(5,10,18,.55);z-index:70;opacity:0;pointer-events:none;transition:opacity .22s}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;left:0;right:0;bottom:0;z-index:71;background:var(--card);border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .28s ease;max-height:84vh;overflow:auto;padding:8px 14px 20px;box-shadow:0 -8px 26px rgba(0,0,0,.28)}
+.drawer.show{transform:translateY(0)}
+.grab{margin:2px auto 6px;width:44px;height:4px;border-radius:3px;background:var(--line)}
+.drawer h3{margin:0 0 6px;font-size:16px}
+.drow{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;line-height:1.7;color:var(--tx)}
+.dbtn{display:inline-block;margin-top:8px;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:6px 10px;font-size:12.5px;color:var(--accent);cursor:pointer}
+.dclose{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:4px 12px;font-size:12.5px;color:var(--tx);cursor:pointer}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>🚗 新疆自驾 · 国庆路况气象台</h1>
-    <div class="sub">赛里木湖 → 布尔津 → 阿勒泰/禾木 → 喀纳斯 · 途经 阿禾公路 / S21 阿乌高速</div>
+    <h1>🚗 新疆自驾 · 路况气象台</h1>
+    <div class="sub">乌鲁木齐 → 赛里木湖 → 奎屯 → 克拉玛依 → 布尔津 → 喀纳斯 → 禾木 → 阿勒泰 → 乌鲁木齐</div>
     <div class="hbar">
-      <span class="chip">📅 10.01 – 10.07 国庆</span>
+      <span class="chip">📅 10.01 – 10.07 出行</span>
       <span class="chip gold">❄️ 关注：降温 / 降雪 / 封路公告</span>
       <button class="btn ghost" id="btnScan" title="手机扫码打开，无需输网址">📲 手机打开</button>
       <button class="btn ghost" id="btnShare">分享</button>
@@ -142,7 +174,19 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
       <small><select id="chartSel" style="background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:3px 6px;font-size:12px"></select></small>
     </h2>
     <div class="svgshell" id="chartBox"></div>
-    <div class="note">金色底为 10.01–10.07 国庆窗口；柱状为每日降雪量(cm)。</div>
+    <div class="note">金色底为出行窗口(10.01–10.07)；柱状为每日降雪量(cm)。</div>
+  </section>
+
+  <section class="sec">
+    <h2>🗺 自驾路线示意 <small>点击城市点查看当地天气/门票信息</small></h2>
+    <div class="mapwrap" id="mapBox"></div>
+    <div class="mapnote">示意图按方位示意，非精确比例；①=起点，⑧=终点后原路返回 ①（乌鲁木齐）。</div>
+  </section>
+
+  <section class="sec">
+    <h2>🎫 门票 · 购票攻略 · 注意事项 <small>价格以官方当日为准（点开查看）</small></h2>
+    <div id="tickList"></div>
+    <div class="note">门票价格参考官方发布（喀纳斯管委会 2025-01 价目，见下方“官方价目页”）；出行期(10.1–10.7)处于旺季(5.1–10.15)。人流为出行提示，实时客流请查景区官方公众号/小程序。</div>
   </section>
 
   <section class="sec" id="noticeSec">
@@ -168,6 +212,13 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
   </footer>
 </div>
 
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <button class="dclose" id="drawerClose" style="float:right">✕ 关闭</button>
+  <div id="drawerBody"></div>
+</div>
+
 <div class="modal" id="shareModal"><div class="sheet">
   <h3>📲 分享给同行的人</h3>
   <div class="note" id="modalNote">手机与本机需在同一 Wi-Fi 下打开</div>
@@ -187,18 +238,20 @@ const WINDOW = ['10-01','10-02','10-03','10-04','10-05','10-06','10-07'];
 
 /* ---- 静态托管/直连模式的本地内置配置（检测不到本机 API 时启用） ---- */
 const STATIC_PLACES = [
-  { id:'sayram',   name:'赛里木湖', sub:'高海拔·环湖风大',      lat:44.60, lon:81.20 },
-  { id:'kelamayi', name:'克拉玛依', sub:'途中·奎屯—克拉玛依风区', lat:45.60, lon:84.87 },
-  { id:'wuerhe',   name:'乌尔禾',   sub:'途中·魔鬼城风沙段',     lat:46.09, lon:85.69 },
-  { id:'burqin',   name:'布尔津',   sub:'S21 北段接驳',          lat:47.70, lon:86.87 },
-  { id:'altay',    name:'阿勒泰市', sub:'阿禾公路起点/S21 终点',  lat:47.84, lon:88.13 },
-  { id:'hemu',     name:'禾木村',   sub:'阿禾公路·山区',         lat:48.45, lon:87.15 },
-  { id:'kanas',    name:'喀纳斯',   sub:'高海拔湖区',            lat:48.71, lon:87.02 }
+  { id:'urumqi',   name:'乌鲁木齐', sub:'起点/终点·S21 南端',  lat:43.83, lon:87.62 },
+  { id:'sayram',   name:'赛里木湖', sub:'高海拔·环湖风大',     lat:44.60, lon:81.20 },
+  { id:'kuytun',   name:'奎屯',     sub:'G30/G3014 交汇',      lat:44.42, lon:84.90 },
+  { id:'kelamayi', name:'克拉玛依', sub:'风口·戈壁油城',       lat:45.60, lon:84.87 },
+  { id:'burqin',   name:'布尔津',   sub:'喀纳斯方向门户',      lat:47.70, lon:86.87 },
+  { id:'kanas',    name:'喀纳斯',   sub:'高海拔湖区·需换乘区间车', lat:48.71, lon:87.02 },
+  { id:'hemu',     name:'禾木',     sub:'阿禾公路·图瓦村落',   lat:48.45, lon:87.15 },
+  { id:'altay',    name:'阿勒泰市', sub:'阿禾公路起点/S21 北端', lat:47.84, lon:88.13 }
 ];
 const STATIC_ROADS = [
-  { key:'sayram-burqin', name:'赛里木湖—克拉玛依—乌尔禾—布尔津（G30→G3014→G217）', watch:['sayram','kelamayi','wuerhe','burqin'], note:'长距离戈壁/风区路段，注意横风与疲劳驾驶' },
-  { key:'ahe', name:'阿禾公路（阿勒泰—禾木）', watch:['altay','hemu','kanas'], note:'山区垭口 10 月起易遇初雪/结冰管制' },
-  { key:'s21', name:'S21 阿乌高速（乌鲁木齐—阿勒泰）', watch:['burqin','altay'], note:'沙漠段横风/沙尘，注意侧风' }
+  { key:'loop', name:'全程大环线（乌鲁木齐—赛里木湖—克拉玛依—布尔津—喀纳斯—禾木—阿勒泰—乌鲁木齐）', watch:['urumqi','sayram','kelamayi','burqin','kanas','hemu','altay'], note:'全程 2500km+，高速与山区路段交替，预留充足时间' },
+  { key:'sayram-burqin', name:'赛里木湖—奎屯—克拉玛依—布尔津（G30→G3014→G217）', watch:['sayram','kuytun','kelamayi','burqin'], note:'戈壁/风区路段，注意横风与疲劳驾驶' },
+  { key:'ahe', name:'阿禾公路（阿勒泰—禾木）', watch:['altay','hemu'], note:'山区垭口 10 月易初雪/结冰管制' },
+  { key:'s21', name:'S21 阿乌高速（阿勒泰—乌鲁木齐沙漠段）', watch:['altay','burqin','urumqi'], note:'沙漠段横风/沙尘，注意侧风' }
 ];
 let apiOk = true;   // true=本机服务聚合模式；false=纯静态直连模式
 const staticMode = () => !apiOk;
@@ -431,7 +484,7 @@ function renderChart(){
   // 网格与Y轴
   for(let g=0;g<=5;g++){const v=yMin+(yMax-yMin)*g/5,y=Y(v);
     s+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="2" y="${y+3}">${Math.round(v)}°</text>`;}
-  // 国庆窗口背景
+  // 出行窗口背景
   days.forEach((d,i)=>{if(inWin(d.date)){s+=`<rect x="${X(i)-step/2}" y="${pt}" width="${step}" height="${ih}" fill="rgba(217,165,20,.13)"/>`;}});
   // 降雪柱
   days.forEach((d,i)=>{const h=(d.snow||0)/snowMax*(ih*0.55);const x=X(i)-step*0.18;
@@ -545,6 +598,101 @@ function renderTips(){
   $('tips').innerHTML=html;
 }
 
+/* ========== 门票 / 购票攻略 / 人流（价格以官方为准） ========== */
+const KANS_GOV = 'https://www.kns.gov.cn/005/005001/20251023/87a41041-c9f3-43ff-a211-fd1a09171802.html';
+const TICKETS = [
+  { id:'sayram', ic:'🏞️', name:'赛里木湖', priceLine:'门票约¥70',
+    price:'门票约 ¥70/人（参考，以官方当日为准）；环湖区间车另购（参考约 ¥75）。',
+    buy:'官方公众号/小程序或“一部手机游新疆”平台预约；长假客流大，建议提前1-2天购票、早到园区。',
+    crowdLv:'', crowd:'较高（环湖热门段 11:00-16:00 最集中）→ 建议 9:00 前入园或午后错峰。',
+    notice:'海拔约 2000m，湖边风大、温差大，注意防风保暖；自驾环湖请限速、勿驶下路基；观景台人多注意安全。' },
+  { id:'kanas', ic:'🏔️', name:'喀纳斯（含白哈巴）', priceLine:'门票¥160·旺季',
+    price:'旺季(5.1-10.15)：喀纳斯门票 ¥160/人·2天；白哈巴 ¥30/人；全域联票(喀纳斯+白哈巴+禾木) ¥195/人·3天。区间车票另购。',
+    buy:'官方渠道：喀纳斯景区管理委员会官方价目页（<a href="'+KANS_GOV+'" target="_blank" rel="noopener">点此查看</a>）；门票/住宿建议提前通过官方公众号/小程序预约。',
+    crowdLv:'', crowd:'极高（节假日为全年峰值）→ 建议前一晚住贾登峪，早进园先排观鱼台区间车。',
+    notice:'自驾车不能进入核心湖区：车辆需停在贾登峪 / 铁热克提换乘中心后乘区间车；门票2日有效，进出次数规则以官方为准；10月山区可能初雪结冰，备防滑链与保暖衣物。' },
+  { id:'hemu', ic:'🏘️', name:'禾木', priceLine:'门票¥50·旺季',
+    price:'旺季(5.1-10.15)门票 ¥50/人；区间车另购。',
+    buy:'官方公众号/小程序预约；节假日期间村里住宿非常抢手，建议至少提前 2-3 周预订（能否自驾进村以当日管制为准）。',
+    crowdLv:'', crowd:'高（日出晨雾时段摄影人流扎堆）→ 想看晨雾建议前一晚住禾木。',
+    notice:'昼夜温差大，10月初夜间可到 0°C 上下，带足保暖；木栈道清晨湿滑；无人机须遵守景区备案规定；注意森林防火。' },
+];
+function renderTickets(){
+  $('tickList').innerHTML=TICKETS.map(t=>`<details class="tick" id="tk-${t.id}">
+    <summary>
+      <span class="tk-ic">${t.ic}</span>
+      <span class="tk-name">${esc(t.name)}</span>
+      <span class="tk-price">${esc(t.priceLine)}</span>
+    </summary>
+    <div class="tk-body">
+      <div class="drow"><b>💰 门票参考：</b> ${t.price}</div>
+      <div class="drow"><b>🛒 购票攻略：</b> ${t.buy}</div>
+      <div class="drow"><b>👥 人流：</b> <span class="tk-crowd ${t.crowdLv}">${esc(t.crowd)}</span></div>
+      <div class="drow"><b>⚠️ 注意事项：</b> ${t.notice}</div>
+    </div>
+  </details>`).join('');
+}
+
+/* ========== 自驾路线示意地图（方位示意，非精确比例）+ 抽屉 ========== */
+function renderMap(){
+  const box=$('mapBox'); if(!places.length) return;
+  const W=900,H=540,MX=78,MY=50;
+  const lon0=80.0, lon1=89.6, lat0=42.4, lat1=50.0;
+  const X=p=>MX+(p.lon-lon0)/(lon1-lon0)*(W-MX*2);
+  const Y=p=>MY+(lat1-p.lat)/(lat1-lat0)*(H-MY*2);
+  const pts=places.map(p=>({id:p.id,name:p.name,sub:p.sub,x:X(p),y:Y(p)}));
+  let d='';
+  pts.forEach((p,i)=>{ d+= (i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; });
+  // 回到起点
+  d+='L'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+  let s=`<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<path class="mroute" d="${d}"/>`;
+  pts.forEach((p,i)=>{
+    const first=(i===0);
+    const above=(p.y<130)||(i>=pts.length-2&&p.y<170); // 顶部附近标签放点下方
+    const ly=p.y+(above?26:-26);
+    s+=`<g class="mcity" data-id="${p.id}" data-i="${i}">
+      <circle cx="${p.x}" cy="${p.y}" r="${first?19:16}"/>
+      <text class="num" x="${p.x}" y="${p.y+4.5}">${i+1}</text>
+      <text class="lab" x="${p.x}" y="${ly+4}" text-anchor="middle">${esc(p.name)}${i===0?'（起/终）':''}</text>
+    </g>`;
+  });
+  s+=`</svg>`;
+  box.innerHTML=s;
+  box.querySelectorAll('.mcity').forEach(g=>g.addEventListener('click',()=>openDrawer(g.dataset.id)));
+}
+function openDrawer(id){
+  const p=places.find(x=>x.id===id)||{};
+  const w=weather.find(x=>x.id===id);
+  const t=TICKETS.find(x=>x.id===id);
+  let html=`<div class="drow"><b>📍 ${esc(p.name||id)}</b> <span style="color:var(--mut)">${esc(p.sub||'')}</span></div>`;
+  if(w&&w.days&&w.days[0]&&!w.error){
+    const d0=w.days[0], wm=wmo(d0.code);
+    const anySnow = w.days.some(x=>x.snow>0) ? '❄ 本10天内有降雪日' : '本10天无降雪';
+    html+=`<div class="drow"><span>今日 ${wm.ic}${wm.tx} <b>${Math.round(d0.tmax)}°/${Math.round(d0.tmin)}°</b></span>
+      <span>💧${d0.pop??'-'}%</span><span>🌬${Math.round(d0.wind||0)}km/h</span>
+      <span>🌅${(d0.sunrise||'--').slice(11,16)} 🌇${(d0.sunset||'--').slice(11,16)}</span></div>`;
+    html+=`<div class="drow"><span style="color:#3f8ef0">${anySnow}</span></div>`;
+  } else {
+    html+=`<div class="drow"><span style="color:var(--mut)">天气数据加载中或暂不可用</span></div>`;
+  }
+  if(t){
+    html+=`<div class="drow">🎫 ${esc(t.priceLine)}　${esc(t.crowd.split('→')[0])}</div>`;
+    html+=`<button class="dbtn" id="goTicketBtn">查看门票 · 购票 · 注意事项 ↓</button>`;
+  } else {
+    html+=`<div class="drow"><span style="color:var(--mut)">沿途城市（非收门票景区）</span></div>`;
+    html+=`<button class="dbtn" id="goCityBtn">看该点 10 天预报 ↓</button>`;
+  }
+  $('drawerBody').innerHTML=html;
+  const bt=$('goTicketBtn'); if(bt) bt.addEventListener('click',()=>{ closeDrawer(); const dt=$('tk-'+id); if(dt){ dt.open=true; dt.scrollIntoView({behavior:'smooth',block:'start'}); } });
+  const bc=$('goCityBtn'); if(bc) bc.addEventListener('click',()=>{ closeDrawer(); const el=$('card-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); });
+  $('scrim').classList.add('show'); $('drawer').classList.add('show');
+}
+function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
+$('drawerClose').addEventListener('click',closeDrawer);
+$('scrim').addEventListener('click',closeDrawer);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
 /* ---------- 定时刷新与按钮 ---------- */
 $('btnRefresh').addEventListener('click',async()=>{
   $('btnRefresh').disabled=true;
@@ -575,6 +723,8 @@ $('btnCopy').addEventListener('click',async()=>{
 (async function init(){
   try{
     await loadMeta();                       // 内部自动判断：本机API or 纯静态直连
+    renderTickets();                        // 门票/攻略/人流（静态内容）
+    renderMap();                            // 路线示意图
     await Promise.all([loadWeather(false),loadNews(false)]);
   }catch(e){
     $('statusRow').innerHTML='<span class="dot r"></span>加载失败：'+esc(e.message)+'（请点顶部「刷新」重试）';
