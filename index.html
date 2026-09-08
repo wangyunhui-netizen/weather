@@ -81,6 +81,13 @@ button{font:inherit}
 .item a:active{opacity:.7}
 .item .d{color:var(--mut);font-size:10.5px;white-space:nowrap;padding-top:2px}
 .roads li{margin:5px 0;font-size:13px;line-height:1.5}
+.rparent{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:6px 10px;margin:6px 0}
+.rparent summary{list-style:none;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.5}
+.rparent summary::-webkit-details-marker{display:none}
+.rparent summary::after{content:"▾";color:var(--mut);margin-left:auto}
+.rparent[open] summary::after{content:"▴"}
+.rsub{margin:6px 0 2px 6px;padding-left:10px;border-left:2px solid var(--line);list-style:none}
+.rsub li{font-size:12.5px}
 .tag{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;margin-right:4px}
 .tag.h{background:#d63c3c;color:#fff}
 .tag.m{background:#e8900c;color:#fff}
@@ -95,6 +102,11 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
 .dot{width:8px;height:8px;border-radius:50%;background:#8a97a5;display:inline-block}
 .dot.g{background:#37d67a}
 .dot.r{background:#d63c3c}
+/* ===== 头部秋景背景 ===== */
+header{position:relative;overflow:hidden}
+.hbg{position:absolute;inset:0;background:url('./bg.jpg') center/cover no-repeat;opacity:.55}
+.hbg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,26,46,.25),rgba(6,26,46,.78))}
+.hct{position:relative;z-index:1}
 .modal{position:fixed;inset:0;background:rgba(10,15,25,.55);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
 .modal.show{display:flex}
 .sheet{background:var(--card);border-radius:16px;max-width:420px;width:100%;padding:18px;text-align:center}
@@ -126,6 +138,9 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
 .mroute{fill:none;stroke:#bfe3ff;stroke-width:2.5;stroke-dasharray:7 6;opacity:.85}
 .mend{fill:#ff9d5c;stroke:#fff;stroke-width:2}
 .mapnote{font-size:11px;color:var(--mut);margin-top:4px}
+.legs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.legchip{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:4px 9px;font-size:11.5px;line-height:1.5;color:var(--tx)}
+.legchip b{color:var(--accent)}
 /* ===== 底部抽屉 ===== */
 .scrim{position:fixed;inset:0;background:rgba(5,10,18,.55);z-index:70;opacity:0;pointer-events:none;transition:opacity .22s}
 .scrim.show{opacity:1;pointer-events:auto}
@@ -141,10 +156,11 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
 <body>
 <div class="wrap">
   <header>
+    <div class="hbg" role="presentation"></div>
+    <div class="hct">
     <h1>🚗 新疆自驾 · 路况气象台</h1>
     <div class="sub">乌鲁木齐 → 赛里木湖 → 奎屯 → 克拉玛依 → 布尔津 → 喀纳斯 → 禾木 → 阿勒泰 → 乌鲁木齐</div>
     <div class="hbar">
-      <span class="chip">📅 10.01 – 10.07 出行</span>
       <span class="chip gold">❄️ 关注：降温 / 降雪 / 封路公告</span>
       <button class="btn ghost" id="btnScan" title="手机扫码打开，无需输网址">📲 手机打开</button>
       <button class="btn ghost" id="btnShare">分享</button>
@@ -152,6 +168,7 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
     </div>
     <div class="statusrow" id="statusRow"><span>正在加载数据…</span></div>
     <div id="pubLine" style="display:none;margin-top:6px;font-size:11px;background:rgba(255,255,255,.14);border-radius:8px;padding:5px 9px;word-break:break-all"></div>
+    </div>
   </header>
 
   <section class="sec" id="roadSec" style="display:none">
@@ -178,9 +195,11 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
   </section>
 
   <section class="sec">
-    <h2>🗺 自驾路线示意 <small>点击城市点查看当地天气/门票信息</small></h2>
+    <h2>🗺 自驾路线地图 <small id="mapModeTag">接入高德后将显示真实在线地图</small></h2>
+    <div id="amapBox" style="display:none"><div id="amapContainer" style="width:100%;height:420px;border-radius:14px;overflow:hidden"></div></div>
     <div class="mapwrap" id="mapBox"></div>
-    <div class="mapnote">示意图按方位示意，非精确比例；①=起点，⑧=终点后原路返回 ①（乌鲁木齐）。</div>
+    <div class="legs" id="legList"></div>
+    <div class="mapnote">点地图/示意图上的城市 → 弹信息抽屉，可一键“高德导航前往”。里程/时长为驾车估算，接入高德 Key 后自动换成实时规划。</div>
   </section>
 
   <section class="sec">
@@ -208,6 +227,7 @@ footer{color:var(--mut);font-size:10.5px;margin-top:14px;line-height:1.7;text-al
   <footer>
     数据源：Open-Meteo 天气 · 必应资讯聚合公告 · 后台自动刷新已关闭，数据仅在打开页面或点「刷新」时更新 · 页面仅作行程参考，非道路管制依据。<br>
     高海拔路段 10 月可能突遇初雪/结冰管制，出行前请确认 12328 及当地交警公告。<br>
+    背景图：金秋林景（Unsplash，示意）；页面截图/数据请勿作为门票与管制最终依据。<br>
     <span id="upd"></span>
   </footer>
 </div>
@@ -247,16 +267,20 @@ const STATIC_PLACES = [
   { id:'hemu',     name:'禾木',     sub:'阿禾公路·图瓦村落',   lat:48.45, lon:87.15 },
   { id:'altay',    name:'阿勒泰市', sub:'阿禾公路起点/S21 北端', lat:47.84, lon:88.13 }
 ];
+const STATIC_SEGS = [
+  { key:'urumqi-sayram', name:'乌鲁木齐 — 赛里木湖（G30 连霍高速）', watch:['urumqi','sayram'], note:'高原山区+湖风，赛里木湖段注意大风' },
+  { key:'sayram-burqin', name:'赛里木湖 — 奎屯 — 克拉玛依 — 布尔津（G30→G3014→G217）', watch:['sayram','kuytun','kelamayi','burqin'], note:'戈壁/风区路段，注意横风与疲劳驾驶' },
+  { key:'burqin-kanas', name:'布尔津 — 喀纳斯 — 禾木（山区）', watch:['burqin','kanas','hemu'], note:'山区道路，10月易初雪结冰，弯多坡陡' },
+  { key:'ahe', name:'阿禾公路（禾木 — 阿勒泰）', watch:['hemu','altay'], note:'阿禾公路，山区垭口易管制' },
+  { key:'s21', name:'S21 阿乌高速（阿勒泰 — 乌鲁木齐）', watch:['altay','burqin','urumqi'], note:'沙漠段横风/沙尘，注意侧风' }
+];
 const STATIC_ROADS = [
-  { key:'loop', name:'全程大环线（乌鲁木齐—赛里木湖—克拉玛依—布尔津—喀纳斯—禾木—阿勒泰—乌鲁木齐）', watch:['urumqi','sayram','kelamayi','burqin','kanas','hemu','altay'], note:'全程 2500km+，高速与山区路段交替，预留充足时间' },
-  { key:'sayram-burqin', name:'赛里木湖—奎屯—克拉玛依—布尔津（G30→G3014→G217）', watch:['sayram','kuytun','kelamayi','burqin'], note:'戈壁/风区路段，注意横风与疲劳驾驶' },
-  { key:'ahe', name:'阿禾公路（阿勒泰—禾木）', watch:['altay','hemu'], note:'山区垭口 10 月易初雪/结冰管制' },
-  { key:'s21', name:'S21 阿乌高速（阿勒泰—乌鲁木齐沙漠段）', watch:['altay','burqin','urumqi'], note:'沙漠段横风/沙尘，注意侧风' }
+  { key:'loop', name:'全程大环线（乌鲁木齐 → 赛里木湖 → 克拉玛依 → 布尔津 → 喀纳斯 → 禾木 → 阿勒泰 → 乌鲁木齐）', watch: STATIC_SEGS.flatMap(s=>s.watch), note:'全程 2000km+（驾车估算），山区与高速交替，预留充足时间', children: STATIC_SEGS.map(s=>s.key) }
 ];
 let apiOk = true;   // true=本机服务聚合模式；false=纯静态直连模式
 const staticMode = () => !apiOk;
 
-let places = [], roads = [], weather = [], urls = [], newsItems = [], publicUrl = '';
+let places = [], roads = [], segs = [], weather = [], urls = [], newsItems = [], publicUrl = '';
 const shareTarget = () => (publicUrl || (location.origin && location.origin !== 'null' ? location.origin : (urls[0]||'')));
 
 /* ---------- WMO 天气代码 -> 中文/图标/类别 ---------- */
@@ -300,16 +324,16 @@ async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r
 
 async function loadMeta(){
   if(location.search.indexOf('static=1')>=0){   // 强制纯静态直连模式（预览/调试用）
-    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; urls=[location.origin]; publicUrl='';
+    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; segs=STATIC_SEGS; urls=[location.origin]; publicUrl='';
     renderOfficial();renderSel();
     return;
   }
   try{
     const m=await jget('/api/meta');
-    places=m.places||[]; roads=m.roads||[]; urls=m.urls||[]; publicUrl=m.publicUrl||''; apiOk=true;
+    places=m.places||[]; roads=m.roads||[]; segs=m.segs||[]; urls=m.urls||[]; publicUrl=m.publicUrl||''; apiOk=true;
   }catch(e){
     // 纯静态托管环境：没有本机 API → 使用内置配置 + 浏览器直连天气源
-    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; urls=[location.origin]; publicUrl='';
+    apiOk=false; places=STATIC_PLACES; roads=STATIC_ROADS; segs=STATIC_SEGS; urls=[location.origin]; publicUrl='';
   }
   const pl=$('pubLine');
   if(publicUrl){pl.style.display='block';pl.textContent='🌐 公网地址（手机用任意网络/流量均可打开）：'+publicUrl;}
@@ -534,25 +558,33 @@ function renderRisks(){
   box.innerHTML=items.map(i=>`<div class="risk ${i.lv}"><b>${esc(i.place)} · ${i.lbl} ${i.date.slice(5).replace('-','/')}</b> ${esc(i.t)}</div>`).join('');
 }
 function renderRoads(){
-  const list=$('roadList');let html='';
-  roads.forEach(r=>{
-    const src=weather.filter(w=>r.watch.includes(w.id)&&w.days&&w.days[0]);
-    const ts=[];
-    src.forEach(p=>{
-      riskOf(p.days[0]).forEach(rr=>{
-        if(rr.lv==='high'||rr.lv==='mid') ts.push({lv:rr.lv,t:`${p.name}：${rr.t}`});
+  const list=$('roadList'); let html='';
+  const riskT=(ids)=>{
+    const out=[]; const seen=new Set();
+    weather.forEach(p=>{
+      if(!ids.includes(p.id)||!p.days||!p.days[0]) return;
+      riskOf(p.days[0]).forEach(r=>{
+        if((r.lv==='high'||r.lv==='mid')&&!seen.has(r.t)){ seen.add(r.t); out.push({lv:r.lv,t:p.name+'：'+r.t}); }
       });
     });
-    const seen=new Set();const merged=ts.filter(x=>{if(seen.has(x.t))return false;seen.add(x.t);return true;}).slice(0,3);
-    const hasHigh=merged.some(x=>x.lv==='high');
-    const badge=hasHigh?'<span class="tag h">注意</span>':(merged.length?'<span class="tag m">关注</span>':'<span class="tag ok">平稳</span>');
-    html+=`<li>${badge}<b>${esc(r.name)}</b> <span style="color:var(--mut)">${esc(r.note)}</span>`;
-    if(merged.length){
-      html+='<br>'+merged.map(x=>`<span class="tag ${x.lv==='high'?'h':'m'}">${esc(x.t)}</span>`).join(' ');
-    }
-    html+='</li>';
+    return out.slice(0,3);
+  };
+  const badge=(ts)=>{ const h=ts.some(x=>x.lv==='high');
+    return h?'<span class="tag h">注意</span>':(ts.length?'<span class="tag m">关注</span>':'<span class="tag ok">平稳</span>'); };
+  const tags=(ts)=>ts.map(x=>`<span class="tag ${x.lv==='high'?'h':'m'}">${esc(x.t)}</span>`).join(' ');
+  roads.forEach(r=>{
+    const pr=riskT(r.watch);
+    const kids=(r.children||[]).map(k=>{
+      const s=(segs||[]).find(x=>x.key===k); if(!s) return '';
+      const ts=riskT(s.watch);
+      return `<li>${badge(ts)}<b>${esc(s.name)}</b> <span style="color:var(--mut);font-size:11px">${esc(s.note)}</span>${ts.length?'<br>'+tags(ts):''}</li>`;
+    }).join('');
+    html+=`<details class="rparent" open>
+      <summary>${badge(pr)}<b>${esc(r.name)}</b><span style="color:var(--mut);font-weight:400;font-size:11px">${esc(r.note)}</span></summary>
+      <ul class="roads rsub">${kids}</ul>
+    </details>`;
   });
-  list.innerHTML=html;$('roadSec').style.display='block';
+  list.innerHTML=html; $('roadSec').style.display='block';
 }
 function renderNews(){
   const box=$('newsBox'),bar=$('newsBar'),q=$('newsQ'),time=$('newsTime');
@@ -601,19 +633,22 @@ function renderTips(){
 /* ========== 门票 / 购票攻略 / 人流（价格以官方为准） ========== */
 const KANS_GOV = 'https://www.kns.gov.cn/005/005001/20251023/87a41041-c9f3-43ff-a211-fd1a09171802.html';
 const TICKETS = [
-  { id:'sayram', ic:'🏞️', name:'赛里木湖', priceLine:'门票约¥70',
-    price:'门票约 ¥70/人（参考，以官方当日为准）；环湖区间车另购（参考约 ¥75）。',
+  { id:'sayram', ic:'🏞️', name:'赛里木湖', priceLine:'人票约¥70 · 可自驾环湖',
+    price:'门票(人)约 ¥70；环湖区间车参考约 ¥75（自愿/视当日规定）。',
+    car:'自驾车：可自驾进入环湖路（按官方现行规定购票后可环湖），停车按景区收费标准；节假日入园车辆较多请早到，具体是否限流以当日公告为准。',
     buy:'官方公众号/小程序或“一部手机游新疆”平台预约；长假客流大，建议提前1-2天购票、早到园区。',
     crowdLv:'', crowd:'较高（环湖热门段 11:00-16:00 最集中）→ 建议 9:00 前入园或午后错峰。',
     notice:'海拔约 2000m，湖边风大、温差大，注意防风保暖；自驾环湖请限速、勿驶下路基；观景台人多注意安全。' },
-  { id:'kanas', ic:'🏔️', name:'喀纳斯（含白哈巴）', priceLine:'门票¥160·旺季',
-    price:'旺季(5.1-10.15)：喀纳斯门票 ¥160/人·2天；白哈巴 ¥30/人；全域联票(喀纳斯+白哈巴+禾木) ¥195/人·3天。区间车票另购。',
-    buy:'官方渠道：喀纳斯景区管理委员会官方价目页（<a href="'+KANS_GOV+'" target="_blank" rel="noopener">点此查看</a>）；门票/住宿建议提前通过官方公众号/小程序预约。',
+  { id:'kanas', ic:'🏔️', name:'喀纳斯（含白哈巴）', priceLine:'人票¥160 · 车不能进核心区',
+    price:'旺季(5.1-10.15)：喀纳斯门票(人) ¥160/2天；白哈巴 ¥30；全域联票(喀纳斯+白哈巴+禾木) ¥195/3天。',
+    car:'自驾车：核心湖区不允许自驾进入——车需停在贾登峪 / 铁热克提换乘中心（收费停车），换乘景区区间车(人票另购，一进/二进可选)；区间车票价与一进/二进规则以官方当日为准。',
+    buy:'官方渠道：喀纳斯景区管理委员会官方价目页（<a href="'+KANS_GOV+'" target="_blank" rel="noopener">点此查看</a>）；门票/区间车/住宿建议提前通过官方公众号/小程序预约。',
     crowdLv:'', crowd:'极高（节假日为全年峰值）→ 建议前一晚住贾登峪，早进园先排观鱼台区间车。',
-    notice:'自驾车不能进入核心湖区：车辆需停在贾登峪 / 铁热克提换乘中心后乘区间车；门票2日有效，进出次数规则以官方为准；10月山区可能初雪结冰，备防滑链与保暖衣物。' },
-  { id:'hemu', ic:'🏘️', name:'禾木', priceLine:'门票¥50·旺季',
-    price:'旺季(5.1-10.15)门票 ¥50/人；区间车另购。',
-    buy:'官方公众号/小程序预约；节假日期间村里住宿非常抢手，建议至少提前 2-3 周预订（能否自驾进村以当日管制为准）。',
+    notice:'门票2日有效，进出次数与区间车票规则以官方为准；10月山区可能初雪结冰，备防滑链与保暖衣物；景区内限速、注意野生动物出没。' },
+  { id:'hemu', ic:'🏘️', name:'禾木', priceLine:'人票¥50 · 车视管制可进村',
+    price:'旺季(5.1-10.15)门票(人) ¥50；区间车另购。',
+    car:'自驾车：是否可自驾进村取决于当日交通管制（旺季多需在换乘中心停车后乘区间车/或按交警指引进入）；村口及村内停车位有限，建议预订带停车位的住宿。',
+    buy:'官方公众号/小程序预约；节假日期间村里住宿非常抢手，建议至少提前 2-3 周预订。',
     crowdLv:'', crowd:'高（日出晨雾时段摄影人流扎堆）→ 想看晨雾建议前一晚住禾木。',
     notice:'昼夜温差大，10月初夜间可到 0°C 上下，带足保暖；木栈道清晨湿滑；无人机须遵守景区备案规定；注意森林防火。' },
 ];
@@ -625,7 +660,8 @@ function renderTickets(){
       <span class="tk-price">${esc(t.priceLine)}</span>
     </summary>
     <div class="tk-body">
-      <div class="drow"><b>💰 门票参考：</b> ${t.price}</div>
+      <div class="drow"><b>🎫 门票(人)：</b> ${t.price}</div>
+      <div class="drow"><b>🚗 自驾车：</b> ${t.car}</div>
       <div class="drow"><b>🛒 购票攻略：</b> ${t.buy}</div>
       <div class="drow"><b>👥 人流：</b> <span class="tk-crowd ${t.crowdLv}">${esc(t.crowd)}</span></div>
       <div class="drow"><b>⚠️ 注意事项：</b> ${t.notice}</div>
@@ -633,33 +669,109 @@ function renderTickets(){
   </details>`).join('');
 }
 
-/* ========== 自驾路线示意地图（方位示意，非精确比例）+ 抽屉 ========== */
-function renderMap(){
+/* ========== 自驾路线地图（高德真实地图 优先 / 方位示意图兜底）+ 抽屉 ========== */
+/* ★ 高德开放平台 Web端(JS API) Key 与 安全密钥 填这里即启用真实在线地图 + 实时路径里程；
+   不填则显示示意图 + 估算里程。请自行到 lbs.amap.com 注册获取。 */
+const AMAP_KEY = '';    // ← 填入高德 Key（Web端 JS API）
+const AMAP_SEC = '';    // ← 填入高德“安全密钥”(JSAPI)
+let amapOk = false;
+
+function legPairs(){
+  const pairs=[];
+  for(let i=0;i<places.length;i++) pairs.push([i,(i+1)%places.length]);
+  return pairs;
+}
+/* 驾车估算（接入高德后由实时规划结果替换）；单位 km / 小时 */
+const EST_KMS = { 'urumqi-sayram':[540,6.5], 'sayram-kuytun':[250,3], 'kuytun-kelamayi':[150,2],
+  'kelamayi-burqin':[320,4], 'burqin-kanas':[140,3], 'kanas-hemu':[60,1.5], 'hemu-altay':[120,2.5], 'altay-urumqi':[470,5.5] };
+function legKey(a,b){ return a.id+'-'+b.id; }
+
+function renderLegs(list){
+  const wrap=$('legList');
+  if(!list) list=legPairs().map(([i,j])=>{
+    const a=places[i],b=places[j]; const k=legKey(a,b); const est=EST_KMS[k]||[0,0];
+    return {a:a,b:b,km:est[0],h:est[1],est:true};
+  });
+  wrap.innerHTML=list.map((L,i)=>`<span class="legchip">${i+1}. ${esc(L.a.name)}→${esc(L.b.name)}<br>
+    ${L.est?'≈':''}<b>${Math.round(L.km)}km</b> · ${L.h<10?L.h.toFixed(1):Math.round(L.h)}h${L.est?'（估）':''}</span>`).join('');
+}
+function drawSchematic(){
   const box=$('mapBox'); if(!places.length) return;
   const W=900,H=540,MX=78,MY=50;
   const lon0=80.0, lon1=89.6, lat0=42.4, lat1=50.0;
   const X=p=>MX+(p.lon-lon0)/(lon1-lon0)*(W-MX*2);
   const Y=p=>MY+(lat1-p.lat)/(lat1-lat0)*(H-MY*2);
-  const pts=places.map(p=>({id:p.id,name:p.name,sub:p.sub,x:X(p),y:Y(p)}));
-  let d='';
-  pts.forEach((p,i)=>{ d+= (i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; });
-  // 回到起点
-  d+='L'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
-  let s=`<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s+=`<path class="mroute" d="${d}"/>`;
+  const pts=places.map(p=>({id:p.id,name:p.name,x:X(p),y:Y(p)}));
+  let d=''; pts.forEach((p,i)=>{ d+=(i===0?'M':'L')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; }); d+='L'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+  let s=`<svg class="mapsvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><path class="mroute" d="${d}"/>`;
   pts.forEach((p,i)=>{
-    const first=(i===0);
-    const above=(p.y<130)||(i>=pts.length-2&&p.y<170); // 顶部附近标签放点下方
-    const ly=p.y+(above?26:-26);
-    s+=`<g class="mcity" data-id="${p.id}" data-i="${i}">
+    const first=(i===0), above=(p.y<130)||(i>=pts.length-2&&p.y<170);
+    s+=`<g class="mcity" data-id="${p.id}">
       <circle cx="${p.x}" cy="${p.y}" r="${first?19:16}"/>
       <text class="num" x="${p.x}" y="${p.y+4.5}">${i+1}</text>
-      <text class="lab" x="${p.x}" y="${ly+4}" text-anchor="middle">${esc(p.name)}${i===0?'（起/终）':''}</text>
-    </g>`;
+      <text class="lab" x="${p.x}" y="${(above?p.y+26:p.y-26)+4}" text-anchor="middle">${esc(p.name)}${first?'（起/终）':''}</text></g>`;
   });
-  s+=`</svg>`;
+  s+='</svg>';
   box.innerHTML=s;
   box.querySelectorAll('.mcity').forEach(g=>g.addEventListener('click',()=>openDrawer(g.dataset.id)));
+}
+function renderMap(){
+  const tag=$('mapModeTag');
+  if(!AMAP_KEY){
+    tag.textContent='示意图模式 · 接入高德 Key 后显示真实地图';
+    $('amapBox').style.display='none'; $('mapBox').style.display='block';
+    drawSchematic(); renderLegs(null);
+    return;
+  }
+  tag.textContent='高德真实地图 · 里程为驾车实时规划';
+  loadAMap();
+}
+function loadAMap(){
+  if(amapOk || window.AMap){ startAMap(); return; }
+  if(document.getElementById('amapjs')) return;
+  const sc=document.createElement('script');
+  sc.id='amapjs';
+  sc.src='https://webapi.amap.com/maps?v=2.0&key='+AMAP_KEY+'&plugin=AMap.Driving,AMap.Scale';
+  sc.onload=()=>{ window._AMapSecurityConfig={securityJsCode:AMAP_SEC}; startAMap(); };
+  sc.onerror=()=>{ $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); tagNote('高德加载失败，已回退示意图'); };
+  document.head.appendChild(sc);
+}
+function tagNote(t){ const n=$('mapModeTag'); if(n) n.textContent=t; }
+function startAMap(){
+  try{
+    const box=$('mapBox'), am=$('amapBox');
+    am.style.display='block'; box.style.display='none'; box.innerHTML='';
+    const map=new AMap.Map('amapContainer',{ zoom:6, center:[86.5,46.2], mapStyle:'amap://styles/whitesmoke' });
+    map.addControl(new AMap.Scale());
+    const driving=new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME });
+    const legs=legPairs(); const rows=[];
+    let idx=0;
+    const runNext=()=>{
+      if(idx>=legs.length){ renderLegs(rows); return; }
+      const [i,j]=legs[idx]; const a=places[i],b=places[j];
+      driving.search([a.lon,a.lat],[b.lon,b.lat],(status,res)=>{
+        idx++;
+        if(status==='complete'&&res.routes&&res.routes[0]){
+          const rt=res.routes[0];
+          const path=rt.steps.map(s=>s.path).flat().map(c=>[c.lng,c.lat]);
+          const line=new AMap.Polyline({path,strokeColor:'#2f6fd0',strokeWeight:5,strokeOpacity:.75,lineJoin:'round'});
+          map.add(line);
+          rows.push({a:a,b:b,km:rt.distance/1000,h:rt.time/3600,est:false});
+          if(path.length){ const mid=path[Math.floor(path.length/2)]; map.add(new AMap.Marker({position:mid,content:'<div style="background:#fff;border-radius:8px;padding:2px 6px;font-size:11px;color:#333">'+(rt.distance/1000).toFixed(0)+'km · '+(rt.time/3600).toFixed(1)+'h</div>',offset:new AMap.Pixel(0,-10)})); }
+        } else { rows.push({a:a,b:b,km:0,h:0,est:true}); }
+        runNext();
+      });
+    };
+    places.forEach(p=>{
+      const mk=new AMap.Marker({ position:[p.lon,p.lat], title:p.name,
+        content:'<div class="amark" data-id="'+p.id+'" style="min-width:46px;background:#0b6bbf;color:#fff;border-radius:12px;padding:3px 8px;font-size:12px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)">'+p.name+'</div>' });
+      map.add(mk);
+    });
+    map.on('click',e=>{ const el=e.originalEvent&&e.originalEvent.target; const t=el&&el.closest?el.closest('.amark'):null; if(t){ map.setZoomAndCenter(8,[Number(e.lnglat.lng),Number(e.lnglat.lat)]); openDrawer(t.dataset.id);} });
+    setTimeout(()=>{ try{ map.setFitView(null,false,[60,60,60,60],90); }catch(_){ } },400);
+    runNext();
+    amapOk=true;
+  }catch(e){ console.warn('amap fail',e); $('amapBox').style.display='none'; $('mapBox').style.display='block'; drawSchematic(); renderLegs(null); }
 }
 function openDrawer(id){
   const p=places.find(x=>x.id===id)||{};
@@ -676,6 +788,10 @@ function openDrawer(id){
   } else {
     html+=`<div class="drow"><span style="color:var(--mut)">天气数据加载中或暂不可用</span></div>`;
   }
+  if(p.lon&&p.lat){
+    const uri='https://uri.amap.com/navigation?to='+p.lon+','+p.lat+','+encodeURIComponent(p.name||'')+'&mode=car&src=dshxjtq&policy=1';
+    html+=`<button class="dbtn" id="navBtn">🧭 一键高德导航前往 ${esc(p.name||'')}</button>`;
+  }
   if(t){
     html+=`<div class="drow">🎫 ${esc(t.priceLine)}　${esc(t.crowd.split('→')[0])}</div>`;
     html+=`<button class="dbtn" id="goTicketBtn">查看门票 · 购票 · 注意事项 ↓</button>`;
@@ -684,6 +800,7 @@ function openDrawer(id){
     html+=`<button class="dbtn" id="goCityBtn">看该点 10 天预报 ↓</button>`;
   }
   $('drawerBody').innerHTML=html;
+  const nb=$('navBtn'); if(nb) nb.addEventListener('click',()=>{ window.open('https://uri.amap.com/navigation?to='+p.lon+','+p.lat+','+encodeURIComponent(p.name||'')+'&mode=car&src=dshxjtq&policy=1','_blank'); });
   const bt=$('goTicketBtn'); if(bt) bt.addEventListener('click',()=>{ closeDrawer(); const dt=$('tk-'+id); if(dt){ dt.open=true; dt.scrollIntoView({behavior:'smooth',block:'start'}); } });
   const bc=$('goCityBtn'); if(bc) bc.addEventListener('click',()=>{ closeDrawer(); const el=$('card-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); });
   $('scrim').classList.add('show'); $('drawer').classList.add('show');
